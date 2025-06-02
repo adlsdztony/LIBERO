@@ -14,6 +14,9 @@ VALIDATE_PREDICATE_FN_DICT = {
     "printjointstate": PrintJointState(),
     "open": Open(),
     "close": Close(),
+    "openratio": OpenRatio(),
+    "staircase": StairCase(),
+    "inair": InAir(),
     "turnon": TurnOn(),
     "turnoff": TurnOff(),
     "upright45": UpRight45(),
@@ -21,6 +24,8 @@ VALIDATE_PREDICATE_FN_DICT = {
     "upright": Upright(),
     "under": Under(),
     "oncentre":OnCentre(),
+    "posigreaterthan": PosiGreaterThan(),
+    "positionwithin": PositionWithin(),
 }
 
 

@@ -78,3 +78,10 @@ class SiteObject:
         return total_size[2] - 0.005 < delta_position[2] < total_size[
             2
         ] + other_height and np.all(np.abs(delta_position[:2]) < total_size[:2])
+    
+    # add open ration of joints for site object (only tested on drawer of wooden cabinet)
+    def open_ratio(self, qpos):
+        open_pos = max(self.object_properties["articulation"]["default_open_ranges"])
+        close_pos = min(self.object_properties["articulation"]["default_close_ranges"])
+        ratio = abs(qpos - close_pos)/(close_pos - open_pos)
+        return max(0.0, min(1.0, ratio))

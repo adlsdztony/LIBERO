@@ -85,7 +85,8 @@ def generate_bddl_from_task_info(folder="/tmp/pddl"):
                     print(bddl_file_name)
                 bddl_file_names.append(bddl_file_name)
                 results.append(result)
-            except:
+            except Exception as e:
+                print(f"Error generating BDDL for {scene_name} with language '{language}': {e}")
                 failures.append((scene_name, language))
     print(f"Succefully generated: {len(results)}")
     return bddl_file_names, failures

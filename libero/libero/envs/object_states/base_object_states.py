@@ -23,6 +23,9 @@ class BaseObjectState:
 
     def is_close(self):
         raise NotImplementedError
+    
+    def open_ratio(self):
+        raise NotImplementedError
 
     def get_size(self):
         raise NotImplementedError
@@ -112,6 +115,14 @@ class ObjectState(BaseObjectState):
             if not (self.env.get_object(self.object_name).is_close(qpos)):
                 return False
         return True
+    
+    def open_ratio(self):
+        ratios = []
+        for joint in self.env.get_object(self.object_name).joints:
+            qpos_addr = self.env.sim.model.get_joint_qpos_addr(joint)
+            qpos = self.env.sim.data.qpos[qpos_addr]
+            ratios.append(self.env.get_object(self.object_name).open_ratio(qpos))
+        return sum(ratios)/len(ratios)
 
     def turn_on(self):
         for joint in self.env.get_object(self.object_name).joints:
@@ -218,3 +229,12 @@ class SiteObjectState(BaseObjectState):
             if not (self.env.get_object(self.parent_name).is_close(qpos)):
                 return False
         return True
+
+    # return average open ratio of all the joints
+    def open_ratio(self):
+        ratios = []
+        for joint in self.env.get_object(self.object_name).joints:
+            qpos_addr = self.env.sim.model.get_joint_qpos_addr(joint)
+            qpos = self.env.sim.data.qpos[qpos_addr]
+            ratios.append(self.env.get_object(self.object_name).open_ratio(qpos))
+        return sum(ratios)/len(ratios)

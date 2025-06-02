@@ -15,18 +15,17 @@ from libero.libero.benchmark.mu_creation import *
 
 
 def main():
-    # living_room_scene_4
-    scene_name = "living_room_scene4"
-    language = "Stack the two bowls together"
+    # kitchen_scene_2
+    scene_name = "kitchen_scene2"
+    language = "Create a staircase with the drawers: top drawer slightly open, middle drawer moderately open, bottom drawer fully open"
     register_task_info(
         language,
         scene_name=scene_name,
-        objects_of_interest=["akita_black_bowl_1", "akita_black_bowl_2"],
+        objects_of_interest=["wooden_cabinet_1"],
         goal_states=[
-            ("StackBowl", "akita_black_bowl_1", "akita_black_bowl_2"),
+            ("StairCase", "wooden_cabinet_1_top_region", "wooden_cabinet_1_middle_region", "wooden_cabinet_1_bottom_region")
         ],
     )
-
 
     bddl_file_names, failures = generate_bddl_from_task_info()
     print(bddl_file_names)

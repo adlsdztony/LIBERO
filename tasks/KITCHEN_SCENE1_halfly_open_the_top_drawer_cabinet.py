@@ -13,20 +13,18 @@ from libero.libero.utils.task_generation_utils import (
 
 from libero.libero.benchmark.mu_creation import *
 
-
 def main():
-    # living_room_scene_4
-    scene_name = "living_room_scene4"
-    language = "Stack the two bowls together"
+    # kitchen_scene_1
+    scene_name = "kitchen_scene1"
+    language = "Half-open the top drawer of cabinet"
     register_task_info(
         language,
         scene_name=scene_name,
-        objects_of_interest=["akita_black_bowl_1", "akita_black_bowl_2"],
+        objects_of_interest=["wooden_cabinet_1"],
         goal_states=[
-            ("StackBowl", "akita_black_bowl_1", "akita_black_bowl_2"),
+            ("OpenRatio", "wooden_cabinet_1_top_region", 0.5)
         ],
     )
-
 
     bddl_file_names, failures = generate_bddl_from_task_info()
     print(bddl_file_names)

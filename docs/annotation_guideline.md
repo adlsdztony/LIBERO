@@ -198,5 +198,13 @@ Given a task: ``[living_room_scene_1] turn the basket upside down over the alpha
 
    Record the video of you successfully finishing the task via teleoperation and you are ready to submit your implementation!
 
-   
-
+## Miscellaneous Tips
+(Keep updating this section as you explore more so that others can benefit from your experience!)
+- **World coordinate system**: In libero, the world coordinate system is defined as follows:
+  - The x-axis points towards yourself.
+  - The y-axis points to RHS.
+  - The z-axis points up.
+  
+  Here is a visual representation of the coordinate system:
+    ![](images/world_coordinate.jpg)
+- **Positioning**: sometimes you might find it hard to know the exact target position. For example you want to check whether an object is put on the corner of the table but you cannot know the exact position of the corner. In this case, you can print out the current position and target position (there is one in function `PositionWithin` in `base_predicates.py`). However, it is strongly advised to try to calculate the position by yourself through initial state (defined in the scene class, you can know it in the function `define_regions` most of the time) and the size of the object (defined in the xml file of the object) and double-check the position by printing it out.
