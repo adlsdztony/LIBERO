@@ -78,7 +78,7 @@ class ObjectState(BaseObjectState):
             joint_states.append(self.env.sim.data.qpos[qpos_addr])
         return joint_states
 
-    def check_ontop(self, other):
+    def check_ontop(self, other, threshold=0.03):
         this_object = self.env.get_object(self.object_name)
         this_object_position = self.env.sim.data.body_xpos[
             self.env.obj_body_id[self.object_name]
@@ -92,7 +92,7 @@ class ObjectState(BaseObjectState):
             and self.check_contact(other)
             and (
                 np.linalg.norm(this_object_position[:2] - other_object_position[:2])
-                < 0.03
+                < threshold
             )
         )
 

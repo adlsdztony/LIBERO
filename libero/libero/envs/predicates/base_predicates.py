@@ -1,6 +1,7 @@
 from typing import List
 import numpy as np
 import robosuite.utils.transform_utils as transform_utils
+from libero.libero.envs.object_states.base_object_states import BaseObjectState
 
 
 class Expression:
@@ -17,6 +18,9 @@ class UnaryAtomic(Expression):
 
     def __call__(self, arg1):
         raise NotImplementedError
+    
+    def expected_arg_types(self) -> List[type]:
+        raise NotImplementedError
 
 
 class BinaryAtomic(Expression):
@@ -25,6 +29,9 @@ class BinaryAtomic(Expression):
 
     def __call__(self, arg1, arg2):
         raise NotImplementedError
+    
+    def expected_arg_types(self) -> List[type]:
+        raise NotImplementedError
 
 
 class MultiarayAtomic(Expression):
@@ -32,6 +39,9 @@ class MultiarayAtomic(Expression):
         pass
 
     def __call__(self, *args):
+        raise NotImplementedError
+    
+    def expected_arg_types(self) -> List[type]:
         raise NotImplementedError
 
 
@@ -42,6 +52,9 @@ class TruePredicateFn(MultiarayAtomic):
     def __call__(self, *args):
         return True
 
+    def expected_arg_types(self):
+        return []
+
 
 class FalsePredicateFn(MultiarayAtomic):
     def __init__(self):
@@ -50,35 +63,94 @@ class FalsePredicateFn(MultiarayAtomic):
     def __call__(self, *args):
         return False
 
+    def expected_arg_types(self):
+        return []
+
+
+class Not(UnaryAtomic):
+    def __call__(self, arg):
+        return not arg
+
+    def expected_arg_types(self):
+        return [bool]
+
+
+class And(BinaryAtomic):
+    def __call__(self, arg1, arg2):
+        return arg1 and arg2
+
+    def expected_arg_types(self):
+        return [bool, bool]
+
+
+class Or(BinaryAtomic):
+    def __call__(self, arg1, arg2):
+        return arg1 or arg2
+
+    def expected_arg_types(self):
+        return [bool, bool]
+
+
+class Any(UnaryAtomic):
+    def __call__(self, arg):
+        if not isinstance(arg, tuple):
+            raise TypeError("Any expects a tuple of booleans")
+        return any(arg)
+
+    def expected_arg_types(self):
+        return [tuple]
+
+
+class All(UnaryAtomic):
+    def __call__(self, arg):
+        if not isinstance(arg, tuple):
+            raise TypeError("All expects a list or tuple of booleans")
+        return all(arg)
+
+    def expected_arg_types(self):
+        return [tuple]
+
+
 
 class InContactPredicateFn(BinaryAtomic):
     def __call__(self, arg1, arg2):
         return arg1.check_contact(arg2)
+
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState]
 
 
 class In(BinaryAtomic):
     def __call__(self, arg1, arg2):
         return arg2.check_contact(arg1) and arg2.check_contain(arg1)
 
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState]
+
 
 class On(BinaryAtomic):
+    """
+    With 3cm center alignement constraint (original)
+    """
     def __call__(self, arg1, arg2):
         return arg2.check_ontop(arg1)
 
-        # if arg2.object_state_type == "site":
-        #     return arg2.check_ontop(arg1)
-        # else:
-        #     obj_1_pos = arg1.get_geom_state()["pos"]
-        #     obj_2_pos = arg2.get_geom_state()["pos"]
-        #     # arg1.on_top_of(arg2) ?
-        #     # TODO (Yfeng): Add checking of center of mass are in the same regions
-        #     if obj_1_pos[2] >= obj_2_pos[2] and arg2.check_contact(arg1):
-        #         return True
-        #     else:
-        #         return False
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState]
+
+class RelaxedOn(BinaryAtomic):
+    """
+    Without center alignment constraint
+    """
+    def __call__(self, arg1, arg2):
+        return arg2.check_ontop(arg1, threshold=float('inf'))
+
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState]
+
 
 class PositionWithin(UnaryAtomic):
-    def __call__(self, arg, position: tuple, threshold: tuple = (0.01, 0.01, 0.01)):
+    def __call__(self, arg, pos_x, pos_y, pos_z, t_x, t_y, t_z):
         """
         Check if the object's position is within a certain threshold of a specified position.
         
@@ -86,8 +158,8 @@ class PositionWithin(UnaryAtomic):
         
         Args:
             arg: The object to check.
-            position: A tuple of [x, y, z] coordinates to compare against.
-            threshold: A tuple of (x, y, z) thresholds for proximity. Default is (0.01, 0.01, 0.01).
+            position: three floats pos_x, pos_y, pos_z coordinates to compare against.
+            threshold: three floats t_x, t_y, t_z thresholds for proximity. Default is (0.01, 0.01, 0.01).
         
         Returns:
             bool: True if the object's position is within the threshold of the specified position, False otherwise.
@@ -95,51 +167,63 @@ class PositionWithin(UnaryAtomic):
         geom = arg.get_geom_state()
         pos = geom["pos"]
         # Check if the position is within the specified threshold
-        within_x = abs(pos[0] - position[0]) <= threshold[0]
-        within_y = abs(pos[1] - position[1]) <= threshold[1]
-        within_z = abs(pos[2] - position[2]) <= threshold[2]
+        within_x = abs(pos[0] - pos_x) <= t_x
+        within_y = abs(pos[1] - pos_y) <= t_y
+        within_z = abs(pos[2] - pos_z) <= t_z
         
         # print current position, target position, and threshold
         # print(f"Current Position: {pos}, Target Position: {position}, Threshold: {threshold}")
         # print(f"Within X: {within_x}, Within Y: {within_y}, Within Z: {within_z}")
         return within_x and within_y and within_z
+    
+    def expected_arg_types(self):
+        return [BaseObjectState, float, float, float, float, float, float]
 
 class Under(BinaryAtomic):
     def __call__(self, arg1, arg2):
         return arg1.get_geom_state()["pos"][2] <= arg2.get_geom_state()["pos"][2]
 
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState]
 
-class Up(BinaryAtomic):
+
+class Up(UnaryAtomic):
     def __call__(self, arg1):
         return arg1.get_geom_state()["pos"][2] >= 1.0
-    
+
+    def expected_arg_types(self):
+        return [BaseObjectState]
+
+
 class UpsideDown(UnaryAtomic):
     def __call__(self, arg):
         geom = arg.get_geom_state()
         w, x, y, z = geom["quat"]
         q_curr = np.array([x, y, z, w])
         R_curr = transform_utils.quat2mat(q_curr)
-        z_curr = R_curr[:, 2]                  # current up-axis in world coords
-        
+        z_curr = R_curr[:, 2]
         return z_curr[2] < -0.95
 
-class Upright(UnaryAtomic): 
-    """Check if the object is upright with respect to the z-axis."""
-    """If this predicate fails, check the initial rotation of the object and use AxisAlignedWithin instead"""
+    def expected_arg_types(self):
+        return [BaseObjectState]
+
+
+class Upright(UnaryAtomic):
     def __call__(self, arg):
         geom = arg.get_geom_state()
-        w, x, y, z = geom["quat"]              # MuJoCo: [w, x, y, z]
-        quat_for_rs = np.array([x, y, z, w])   # transform_utils: [x, y, z, w]
-
+        w, x, y, z = geom["quat"]
+        quat_for_rs = np.array([x, y, z, w])
         R = transform_utils.quat2mat(quat_for_rs)
         z_axis_world = R[:, 2]
         return z_axis_world[2] >= 0.9
 
+    def expected_arg_types(self):
+        return [BaseObjectState]
+
+
 class PosiGreaterThan(UnaryAtomic):
     """Check if the object's position is greater than a specified value along a specified axis."""
     def __call__(self, *args):
-        if len(args) != 3:
-            raise ValueError("PosiGreaterThan expects 3 arguments: object, axis ('x', 'y', 'z'), value")
         arg, axis, value = args
         if axis not in {"x", "y", "z"}:
             raise ValueError("Axis must be one of 'x', 'y', or 'z'")
@@ -147,20 +231,15 @@ class PosiGreaterThan(UnaryAtomic):
         pos = arg.get_geom_state()["pos"]
         axis_index = {"x": 0, "y": 1, "z": 2}[axis]
         return pos[axis_index] > value
+    
+    def expected_arg_types(self):
+        return [BaseObjectState, str, float]
 
 class AxisAlignedWithin(UnaryAtomic):
-    """
-    Check if the object's specified axis is within a degree range [min_deg, max_deg]
-    from alignment with the world Z+ axis.
-    
-    Usage: Upright()(object, axis, min_deg, max_deg)
-    """
     def __call__(self, *args):
         if len(args) != 4:
             raise ValueError("Upright expects 4 arguments: object, axis ('x', 'y', 'z'), min_degree, max_degree")
-
         obj, axis, min_deg, max_deg = args
-
         if axis not in {"x", "y", "z"}:
             raise ValueError("Axis must be one of 'x', 'y', or 'z'")
         if not (0 <= min_deg <= max_deg <= 180):
@@ -171,11 +250,9 @@ class AxisAlignedWithin(UnaryAtomic):
         cos_min = np.cos(min_rad)
         cos_max = np.cos(max_rad)
 
-        # print(cos_min, cos_max)
-
         geom = obj.get_geom_state()
         w, x, y, z = geom["quat"]
-        quat_for_rs = np.array([x, y, z, w])  # Convert to [x, y, z, w] for robosuite
+        quat_for_rs = np.array([x, y, z, w])
         R = transform_utils.quat2mat(quat_for_rs)
 
         axis_index = {"x": 0, "y": 1, "z": 2}[axis]
@@ -184,6 +261,8 @@ class AxisAlignedWithin(UnaryAtomic):
 
         return cos_max <= cos_angle <= cos_min
 
+    def expected_arg_types(self):
+        return [BaseObjectState, str, float, float]
 
 
 class Stack(BinaryAtomic):
@@ -193,6 +272,10 @@ class Stack(BinaryAtomic):
             and arg2.check_contain(arg1)
             and arg1.get_geom_state()["pos"][2] > arg2.get_geom_state()["pos"][2]
         )
+
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState]
+
 
 class StackBowl(BinaryAtomic):
     """
@@ -228,28 +311,40 @@ class StackBowl(BinaryAtomic):
         vertical_stack = (
             z_min_gap < abs(pos1[2] - pos2[2]) < z_max_gap
         )
+
         return (
             arg1.check_contact(arg2)
             and horizontally_aligned
             and vertical_stack
         )
 
-class PrintJointState(UnaryAtomic):
-    """This is a debug predicate to allow you print the joint values of the object you care"""
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState]
 
+
+class PrintJointState(UnaryAtomic):
     def __call__(self, arg):
         print(arg.get_joint_state())
         return True
+
+    def expected_arg_types(self):
+        return [BaseObjectState]
 
 
 class Open(UnaryAtomic):
     def __call__(self, arg):
         return arg.is_open()
 
+    def expected_arg_types(self):
+        return [BaseObjectState]
+
 
 class Close(UnaryAtomic):
     def __call__(self, arg):
         return arg.is_close()
+
+    def expected_arg_types(self):
+        return [BaseObjectState]
 
 class OpenRatio(UnaryAtomic):
     """
@@ -270,6 +365,9 @@ class OpenRatio(UnaryAtomic):
             return True
         else:
             return False
+    
+    def expected_arg_types(self):
+        return [BaseObjectState, float]
 
 
 class StairCase(UnaryAtomic):
@@ -297,6 +395,9 @@ class StairCase(UnaryAtomic):
         else:
             return False
     
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState, BaseObjectState]
+    
 class InAir(UnaryAtomic):
     """
     Check if an object is above a specified height threshold (i.e., in the air).
@@ -316,27 +417,24 @@ class InAir(UnaryAtomic):
             return True
         else:
             return False
+    
+    def expected_arg_types(self):
+        return [BaseObjectState, float]
 
 class TurnOn(UnaryAtomic):
     def __call__(self, arg):
         return arg.turn_on()
+
+    def expected_arg_types(self):
+        return [BaseObjectState]
 
 
 class TurnOff(UnaryAtomic):
     def __call__(self, arg):
         return arg.turn_off()
 
-
-# class UpRight45(UnaryAtomic):
-#     """Check if the object is upright within 45 degrees"""
-#     def __call__(self, arg):
-#         geom = arg.get_geom_state()
-#         w, x, y, z = geom["quat"]
-#         quat_for_rs = np.array([x, y, z, w])
-
-#         R = transform_utils.quat2mat(quat_for_rs)
-#         z_axis = R[:, 2]
-#         return z_axis[2] >= 0.7071
+    def expected_arg_types(self):
+        return [BaseObjectState]
 
 class OnCentre(BinaryAtomic):
     '''
@@ -372,3 +470,6 @@ class OnCentre(BinaryAtomic):
       
     def __call__(self, arg1, arg2):
         return self.check_ontop(arg2, arg1) 
+    
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState]

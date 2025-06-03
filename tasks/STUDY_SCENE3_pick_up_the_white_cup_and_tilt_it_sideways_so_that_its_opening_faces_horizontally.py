@@ -21,7 +21,7 @@ def main():
         objects_of_interest=["porcelain_mug_1"],
         goal_states=[
             ("posigreaterthan", "porcelain_mug_1", "z", 1.0),
-            ("axisalignedwithin", "porcelain_mug_1", "z",85, 95),
+            ("axisalignedwithin", "porcelain_mug_1", "z", 85, 95),
         ],
     )
 
