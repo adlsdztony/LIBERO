@@ -337,3 +337,38 @@ class TurnOff(UnaryAtomic):
 #         R = transform_utils.quat2mat(quat_for_rs)
 #         z_axis = R[:, 2]
 #         return z_axis[2] >= 0.7071
+
+class OnCentre(BinaryAtomic):
+    '''
+        Check whether an object is in the centre of another object with a margin of error.
+
+        Usage: OnCentre()(object1, object2)
+        Arguments:
+        - arg1: The object that is supposed to be in the centre ontop of the second object (arg2).
+        - arg2: The object that is supposed to be in the centre below the first object (arg1).
+        
+        Returns:
+        - True if the object1 is ontop of object2 and is also in the centre of object2 within a margin of error of 0.005.
+        - False otherwise.
+            
+    '''
+    def check_ontop(self, arg2, arg1):
+        this_object = arg2.env.get_object(arg2.object_name)
+        this_object_position = arg2.env.sim.data.body_xpos[
+            arg2.env.obj_body_id[arg2.object_name]
+        ]
+        other_object = arg2.env.get_object(arg1.object_name)
+        other_object_position = arg2.env.sim.data.body_xpos[
+            arg2.env.obj_body_id[arg1.object_name]
+        ]
+        return (
+            (this_object_position[2] <= other_object_position[2])
+            and arg2.check_contact(arg1)
+            and (
+                np.linalg.norm(this_object_position[:2] - other_object_position[:2])
+                < 0.005
+            )
+        )
+      
+    def __call__(self, arg1, arg2):
+        return self.check_ontop(arg2, arg1) 
