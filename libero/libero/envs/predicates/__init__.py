@@ -32,6 +32,8 @@ VALIDATE_PREDICATE_FN_DICT = {
     "posigreaterthan": PosiGreaterThan(),
     "positionwithin": PositionWithin(),
     "oncentre":OnCentre(),
+    "above": Above(),
+    "between": MidBetween(),
 }
 
 
