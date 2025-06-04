@@ -12,9 +12,9 @@ def run_python_script(path):
         result = subprocess.run([sys.executable, path], capture_output=True, text=True)
 
         if result.returncode == 0:
-            match = re.search(r"\['(.*?)'\]", result.stdout)
+            match = re.search(r'\[(["\'])(.*?)\1\]', result.stdout)
             if match:
-                generated_path = match.group(1)
+                generated_path = match.group(2)
 
                 # check if windows path and convert to Unix style if necessary
                 if os.name == 'nt':

@@ -15,24 +15,21 @@ from libero.libero.benchmark.mu_creation import *
 
 def main():
 
-    scene_name = "kitchen_scene1"
-    language = "Put the black bowl on the wooden cabinet's corner that is closest to the robot arm base"
-    # x-y center of cabinet is 0, -0.3 (from the init_state of the scene)
-    # x-y half_size  is 0.12534 0.09438
-    # target bowl height is about 1.12, known from teleoperation and printing out the current position
-    # then calculate the target position
-    bottom_right_corner = [0 - 0.12534, - (0.3 - 0.09438), 1.12]
+    scene_name = "living_room_scene3"
+    language = "pad the piece of cream cheese and butter beneath the can that that most closely matches each item's color, respectively"
     register_task_info(
         language,
         scene_name=scene_name,
-        objects_of_interest=["wooden_cabinet_1", "akita_black_bowl_1"],
+        objects_of_interest=["cream_cheese_1", "alphabet_soup_1", "butter_1", "tomato_sauce_1"],
         goal_states=[
-            ("PositionWithin", "akita_black_bowl_1", bottom_right_corner[0], bottom_right_corner[1], bottom_right_corner[2], 0.05, 0.05, 0.01),
+            ("On", "alphabet_soup_1", "cream_cheese_1"),
+            ("On", "tomato_sauce_1", "butter_1"),
         ]
     )
 
     bddl_file_names, failures = generate_bddl_from_task_info()
     print(bddl_file_names)
+
 
 if __name__ == "__main__":
     main()

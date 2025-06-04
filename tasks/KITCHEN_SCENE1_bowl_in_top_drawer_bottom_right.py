@@ -18,16 +18,15 @@ def main():
     scene_name = "kitchen_scene1"
     language = "Put the black bowl on the wooden cabinet's corner that is closest to the robot arm base"
     # x-y center of cabinet is 0, -0.3 (from the init_state of the scene)
-    # x-y half_size  is 0.12534 0.09438
-    # target bowl height is about 1.12, known from teleoperation and printing out the current position
+    # known from teleoperation and printing out the current position
     # then calculate the target position
-    bottom_right_corner = [0 - 0.12534, - (0.3 - 0.09438), 1.12]
+    bottom_right_corner = [-0.05, -0.25, 1.06]
     register_task_info(
         language,
         scene_name=scene_name,
         objects_of_interest=["wooden_cabinet_1", "akita_black_bowl_1"],
         goal_states=[
-            ("PositionWithin", "akita_black_bowl_1", bottom_right_corner[0], bottom_right_corner[1], bottom_right_corner[2], 0.05, 0.05, 0.01),
+            ("PositionWithin", "akita_black_bowl_1", bottom_right_corner[0], bottom_right_corner[1], bottom_right_corner[2], 0.015, 0.05, 0.01),
         ]
     )
 

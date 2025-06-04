@@ -14,25 +14,22 @@ from libero.libero.utils.task_generation_utils import (
 from libero.libero.benchmark.mu_creation import *
 
 def main():
-
+    # kitchen_scene_1
     scene_name = "kitchen_scene1"
-    language = "Put the black bowl on the wooden cabinet's corner that is closest to the robot arm base"
-    # x-y center of cabinet is 0, -0.3 (from the init_state of the scene)
-    # x-y half_size  is 0.12534 0.09438
-    # target bowl height is about 1.12, known from teleoperation and printing out the current position
-    # then calculate the target position
-    bottom_right_corner = [0 - 0.12534, - (0.3 - 0.09438), 1.12]
+    language = "Half-open the top drawer of cabinet"
     register_task_info(
         language,
         scene_name=scene_name,
-        objects_of_interest=["wooden_cabinet_1", "akita_black_bowl_1"],
+        objects_of_interest=["wooden_cabinet_1"],
         goal_states=[
-            ("PositionWithin", "akita_black_bowl_1", bottom_right_corner[0], bottom_right_corner[1], bottom_right_corner[2], 0.05, 0.05, 0.01),
-        ]
+            ("OpenRatio", "wooden_cabinet_1_top_region", 1),
+            ("OpenRatio", "wooden_cabinet_1_middle_region", 1),
+        ],
     )
 
     bddl_file_names, failures = generate_bddl_from_task_info()
     print(bddl_file_names)
+
 
 if __name__ == "__main__":
     main()

@@ -10,13 +10,13 @@ VALIDATE_PREDICATE_FN_DICT = {
     "any": Any(),
     "all": All(),
     "in": In(),
-    "incontact": InContactPredicateFn(),
+    "equal": Equal(),
+    "distance": Distance(),
+    "incontact": InContact(),
     "on": On(),
     "relaxedon": RelaxedOn(),
     "up": Up(),
-    # "stack":     Stack(),
     "stackbowl": StackBowl(),
-    # "temporal":  TemporalPredicate(),
     "printjointstate": PrintJointState(),
     "open": Open(),
     "close": Close(),
@@ -32,8 +32,11 @@ VALIDATE_PREDICATE_FN_DICT = {
     "posigreaterthan": PosiGreaterThan(),
     "positionwithin": PositionWithin(),
     "oncentre":OnCentre(),
+    "getposi": GetPosi(),
+    "printgeomstate": PrintGeomState(),
     "above": Above(),
     "between": MidBetween(),
+    "relaxedbetween": RelaxedMidBetween(),
 }
 
 
