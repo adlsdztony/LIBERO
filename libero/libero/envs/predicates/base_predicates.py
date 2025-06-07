@@ -775,3 +775,35 @@ class FlexibleOn(BinaryAtomic):
     def expected_arg_types(self):
         return [BaseObjectState, BaseObjectState, float, float]
 
+
+
+class PositionWithinObjectAnnulus(UnaryAtomic):
+    """
+    Check if the position of one object is within a bounding annulus relative to another object's position in the x-y plane.
+
+    Usage: PositionWithinObjectAnnulus()(arg1, arg2, min_radius, max_radius)
+    Args:
+        arg1: The object whose position is being checked.
+        arg2: The reference object to define the bounding region.
+        min_radius: The minimum distance from arg2's position.
+        max_radius: The maximum distance from arg2's position.
+    Returns:
+        bool: True if arg1's position is within the specified bounds relative to arg2, False otherwise.
+    """
+    def __call__(self, arg1, arg2, min_radius, max_radius):
+        if min_radius < 0 or max_radius < 0:
+            raise ValueError("min_radius and max_radius must be non-negative")
+        geom1 = arg1.get_geom_state()
+        geom2 = arg2.get_geom_state()
+        pos1 = geom1["pos"]
+        pos2 = geom2["pos"]
+
+        # Check if the position is within the annulus defined by min_radius and max_radius
+        distance = np.linalg.norm(np.array(pos1[:2]) - np.array(pos2[:2]))
+        within_radius = min_radius <= distance <= max_radius
+
+        # print(f"Distance: {distance}, Min Radius: {min_radius}, Max Radius: {max_radius}, Within Radius: {within_radius}")
+        return within_radius
+
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState, float, float]
