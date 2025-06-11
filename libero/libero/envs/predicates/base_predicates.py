@@ -188,6 +188,73 @@ class Equal(BinaryAtomic):
     def expected_arg_types(self):
         return [float, float, float]
 
+class Arithmetic(MultiarayAtomic):
+    """
+    Perform a chain of arithmetic operations on a list of floats and operations.
+    
+    Usage: Arithmetic()(start_value, op1, val1, op2, val2, ...)
+    Example: Arithmetic()(1.0, 'add', 2.0, 'subtract', 3.0)
+    """
+    def __call__(self, *args):
+        if len(args) < 3 or len(args) % 2 == 0:
+            raise ValueError("Expected at least one operation: (start_val, op1, val1, ...), with odd total length.")
+
+        result = args[0]  # starting number
+        i = 1
+        while i < len(args):
+            op = args[i]
+            val = args[i + 1]
+
+            if op == "add":
+                result += val
+            elif op == "subtract":
+                result -= val
+            elif op == "multiply":
+                result *= val
+            elif op == "divide":
+                result /= val
+            else:
+                raise ValueError(f"Unsupported operation: {op}")
+            i += 2
+        return result
+
+    def expected_arg_types(self, *args):
+        return [float, str, float]
+    
+class TriangleCenter(BinaryAtomic):
+    """
+    Check if the position of arg1 is within a triangle defined by the positions of arg2, arg3, and arg4 on the XY plane.
+
+    Args:
+        arg1: The object whose position is being checked (BaseObjectState).
+        arg2: The first vertex of the triangle (BaseObjectState).
+        arg3: The second vertex of the triangle (BaseObjectState).
+        arg4: The third vertex of the triangle (BaseObjectState).
+    Returns:
+        bool: True if arg1's position is within the triangle formed by arg2, arg3, and arg4, False otherwise.
+    """
+    def __call__(self, arg1, arg2, arg3, arg4, tol):
+        pos1 = np.array(arg1.get_geom_state()["pos"])
+        pos2 = np.array(arg2.get_geom_state()["pos"])
+        pos3 = np.array(arg3.get_geom_state()["pos"])
+        pos4 = np.array(arg4.get_geom_state()["pos"])
+
+        # Project the positions onto the XY plane
+        pos1_xy = pos1[:2]
+        pos2_xy = pos2[:2]
+        pos3_xy = pos3[:2]
+        pos4_xy = pos4[:2]
+
+        tolerance = tol # Tolerance for proximity check
+        # Calculate the position of centroid of the triangle formed by pos2, pos3, and pos4
+        centroid = (pos2_xy + pos3_xy + pos4_xy) / 3.0
+
+        # check if pos1_xy is within the triangle formed by pos2_xy, pos3_xy, and pos4_xy
+        return np.all(np.abs(pos1_xy - centroid) < tolerance)
+
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState, BaseObjectState, BaseObjectState, float]
+
 
 class Distance(BinaryAtomic):
     """
@@ -514,7 +581,7 @@ class AxisAlignedWithin(UnaryAtomic):
     Check if the object's specified axis is within a degree range [min_deg, max_deg]
     from alignment with the world Z+ axis.
 
-    Usage: Upright()(object, axis, min_deg, max_deg)
+    Usage: AxisAlignedWithin()(object, axis, min_deg, max_deg)
     Args:
         obj: The object whose orientation is being checked.
         axis: A string indicating the axis ('x', 'y', or 'z') to check.
@@ -527,7 +594,10 @@ class AxisAlignedWithin(UnaryAtomic):
         ValueError: If the axis is not one of 'x', 'y', or 'z', or if the degree range is invalid.
     """
 
-    def __call__(self, obj, axis, min_deg, max_deg):
+    def __call__(self, *args):
+        if len(args) != 4:
+            raise ValueError("AxisAlignedWithin expects 4 arguments: object, axis ('x', 'y', 'z'), min_degree, max_degree")
+        obj, axis, min_deg, max_deg = args
         if axis not in {"x", "y", "z"}:
             raise ValueError("Axis must be one of 'x', 'y', or 'z'")
         if not (0 <= min_deg <= max_deg <= 180):
@@ -546,6 +616,12 @@ class AxisAlignedWithin(UnaryAtomic):
         axis_index = {"x": 0, "y": 1, "z": 2}[axis]
         object_axis_world = R[:, axis_index]
         cos_angle = object_axis_world[2]
+        
+        # # this is used to print the current angle of the axis with respect to Z+ for debugging
+        # # calculate current angle in degrees
+        # angle_rad = np.arccos(cos_angle)
+        # angle_deg = np.degrees(angle_rad)
+        # print(f"Current angle of {axis} axis with Z+ is {angle_deg:.2f} degrees")
 
         return cos_max <= cos_angle <= cos_min
 
