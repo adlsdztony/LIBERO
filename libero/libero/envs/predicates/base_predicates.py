@@ -269,7 +269,7 @@ class Distance(BinaryAtomic):
     def __call__(self, arg1, arg2):
         pos1 = arg1.get_geom_state()["pos"]
         pos2 = arg2.get_geom_state()["pos"]
-        print(np.linalg.norm(np.array(pos1) - np.array(pos2)))
+        # print(np.linalg.norm(np.array(pos1) - np.array(pos2)))
         return np.linalg.norm(np.array(pos1) - np.array(pos2))
 
     def expected_arg_types(self):
