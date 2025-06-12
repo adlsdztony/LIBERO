@@ -269,6 +269,7 @@ class Distance(BinaryAtomic):
     def __call__(self, arg1, arg2):
         pos1 = arg1.get_geom_state()["pos"]
         pos2 = arg2.get_geom_state()["pos"]
+        print(np.linalg.norm(np.array(pos1) - np.array(pos2)))
         return np.linalg.norm(np.array(pos1) - np.array(pos2))
 
     def expected_arg_types(self):
@@ -551,6 +552,31 @@ class PosiGreaterThan(UnaryAtomic):
     
     def expected_arg_types(self):
         return [BaseObjectState, str, float]
+
+class PosiGreaterThanObject(UnaryAtomic):
+    """
+    Check if the position of one object is greater than another object's position along a specified axis with an offset.
+    Usage: PosiGreaterThanObject()(object1, object2, axis, offset)
+    Args:
+        obj1: The first object whose position is being checked.
+        obj2: The second object whose position is used for comparison.
+        axis: A string indicating the axis ('x', 'y', or 'z') to check.
+        offset: A float value to add to the second object's position along the specified axis.
+    Returns:
+        bool: True if the position of obj1 along the specified axis is greater than the position of obj2 plus the offset, False otherwise.
+    """
+    def __call__(self, *args):
+        obj1, obj2, axis, offset  = args
+        if axis not in {"x", "y", "z"}:
+            raise ValueError("Axis must be one of 'x', 'y', or 'z'")
+
+        pos1 = obj1.get_geom_state()["pos"]
+        pos2 = obj2.get_geom_state()["pos"]
+        axis_index = {"x": 0, "y": 1, "z": 2}[axis]
+        return pos1[axis_index] > (pos2[axis_index] + offset)
+
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState, str, float]
     
 class PosiLessThan(UnaryAtomic):
     """
@@ -575,6 +601,32 @@ class PosiLessThan(UnaryAtomic):
     
     def expected_arg_types(self):
         return [BaseObjectState, str, float]
+
+class PosiLessThanObject(UnaryAtomic):
+    """
+    Check if the position of one object is less than another object's position along a specified axis with an offset.
+    
+    Usage: PosiLessThanObject()(object1, object2, axis, offset)
+    Args:
+        obj1: The first object whose position is being checked.
+        obj2: The second object whose position is used for comparison.
+        axis: A string indicating the axis ('x', 'y', or 'z') to check.
+        offset: A float value to subtract from the second object's position along the specified axis.
+    Returns:
+        bool: True if the position of obj1 along the specified axis is less than the position of obj2 minus the offset, False otherwise.
+    """
+    def __call__(self, *args):
+        obj1, obj2, axis, offset  = args
+        if axis not in {"x", "y", "z"}:
+            raise ValueError("Axis must be one of 'x', 'y', or 'z'")
+
+        pos1 = obj1.get_geom_state()["pos"]
+        pos2 = obj2.get_geom_state()["pos"]
+        axis_index = {"x": 0, "y": 1, "z": 2}[axis]
+        return pos1[axis_index] < (pos2[axis_index] - offset)
+
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState, str, float]
 
 class AxisAlignedWithin(UnaryAtomic):
     """
