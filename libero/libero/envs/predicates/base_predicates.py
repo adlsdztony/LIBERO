@@ -527,10 +527,7 @@ class AxisAlignedWithin(UnaryAtomic):
         ValueError: If the axis is not one of 'x', 'y', or 'z', or if the degree range is invalid.
     """
 
-    def __call__(self, *args):
-        if len(args) != 4:
-            raise ValueError("Upright expects 4 arguments: object, axis ('x', 'y', 'z'), min_degree, max_degree")
-        obj, axis, min_deg, max_deg = args
+    def __call__(self, obj, axis, min_deg, max_deg):
         if axis not in {"x", "y", "z"}:
             raise ValueError("Axis must be one of 'x', 'y', or 'z'")
         if not (0 <= min_deg <= max_deg <= 180):
@@ -549,17 +546,70 @@ class AxisAlignedWithin(UnaryAtomic):
         axis_index = {"x": 0, "y": 1, "z": 2}[axis]
         object_axis_world = R[:, axis_index]
         cos_angle = object_axis_world[2]
-        
-        # # this is used to print the current angle of the axis with respect to Z+ for debugging
-        # # calculate current angle in degrees
-        # angle_rad = np.arccos(cos_angle)
-        # angle_deg = np.degrees(angle_rad)
-        # print(f"Current angle of {axis} axis with Z+ is {angle_deg:.2f} degrees")
 
         return cos_max <= cos_angle <= cos_min
 
     def expected_arg_types(self):
         return [BaseObjectState, str, float, float]
+    
+class AxisAlignedWithinWorldAxis(UnaryAtomic):
+    """
+    Check if the object's specified axis is within a degree range [min_deg, max_deg]
+    from alignment with a reference axis in world coordinates.
+
+    Usage: AxisAlignedWithin()(object, axis, min_deg, max_deg, reference_axis)
+    Args:
+        obj: The object whose orientation is being checked.
+        axis: A string indicating the object's axis ('x', 'y', or 'z') to check.
+        min_deg: Minimum angle in degrees for the axis to be considered aligned.
+        max_deg: Maximum angle in degrees for the axis to be considered aligned.
+        reference_axis: A string indicating the world reference axis ('x', 'y', or 'z') 
+                       to measure against. Defaults to 'z' for backward compatibility.
+    Returns:
+        bool: True if the object's specified axis is within the degree range from 
+              alignment with the reference axis, False otherwise.
+    Raises:
+        ValueError: If the axis or reference_axis is not one of 'x', 'y', or 'z', 
+                   or if the degree range is invalid.
+    """
+
+    def __call__(self, obj, axis, min_deg, max_deg, reference_axis):
+        if axis not in {"x", "y", "z"}:
+            raise ValueError("Axis must be one of 'x', 'y', or 'z'")
+        if reference_axis not in {"x", "y", "z"}:
+            raise ValueError("Reference axis must be one of 'x', 'y', or 'z'")
+        if not (0 <= min_deg <= max_deg <= 180):
+            raise ValueError("Degrees must satisfy 0 <= min_deg <= max_deg <= 180")
+
+        min_rad = np.radians(min_deg)
+        max_rad = np.radians(max_deg)
+        cos_min = np.cos(min_rad)
+        cos_max = np.cos(max_rad)
+
+        geom = obj.get_geom_state()
+        w, x, y, z = geom["quat"]
+        quat_for_rs = np.array([x, y, z, w])
+        R = transform_utils.quat2mat(quat_for_rs)
+
+        # Get the object's axis vector in world coordinates
+        axis_index = {"x": 0, "y": 1, "z": 2}[axis]
+        object_axis_world = R[:, axis_index]
+        
+        # Get the reference axis vector in world coordinates
+        reference_vectors = {
+            "x": np.array([1.0, 0.0, 0.0]),
+            "y": np.array([0.0, 1.0, 0.0]), 
+            "z": np.array([0.0, 0.0, 1.0])
+        }
+        reference_vector = reference_vectors[reference_axis]
+        
+        # Calculate the cosine of the angle between the object axis and reference axis
+        cos_angle = np.dot(object_axis_world, reference_vector)
+
+        return cos_max <= cos_angle <= cos_min
+
+    def expected_arg_types(self):
+        return [BaseObjectState, str, float, float, str]
 
 class PrintGeomState(UnaryAtomic):
     """
@@ -815,7 +865,7 @@ class TurnOff(UnaryAtomic):
 
 class Above(BinaryAtomic):
     """
-    This predicate checks if the first object (arg1) is above the second object (arg2),
+    This predicate checks if the first object (arg1) is above the second object (arg2) but not necessarily in contact.,
     with a center alignment constraint of 2cm in the x and y axes.
     
     Usage: Above()(arg1, arg2)
