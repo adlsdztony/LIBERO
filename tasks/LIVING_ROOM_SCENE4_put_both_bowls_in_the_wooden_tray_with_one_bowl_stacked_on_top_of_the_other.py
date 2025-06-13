@@ -15,17 +15,16 @@ from libero.libero.benchmark.mu_creation import *
 
 def main():
 
-    scene_name = "living_room_scene1"
-    language = "turn the basket upside down over the alphabet soup"
+    scene_name = "living_room_scene4"
+    language = "Put both bowls in the wooden tray with one bowl stacked on top of the other"
     register_task_info(
         language,
         scene_name=scene_name,
-        objects_of_interest=["alphabet_soup_1", "basket_1"],
+        objects_of_interest=["wooden_tray_1", "akita_black_bowl_1", "akita_black_bowl_2"],
         goal_states=[
-            ("In", "alphabet_soup_1", "basket_1_contain_region"),
-            ("UpsideDown", "basket_1"),
-            ("PositionWithin", "basket_1", 0.0, 0.0, 0.582, 1, 1, 0.01),
-            ("PositionWithin", "alphabet_soup_1", 0.0, 0.0, 0.475, 1, 1, 0.01),
+            ('In', 'akita_black_bowl_1', 'wooden_tray_1_contain_region'), 
+            ('In', 'akita_black_bowl_2', 'wooden_tray_1_contain_region'),
+            ('StackBowl', 'akita_black_bowl_1', 'akita_black_bowl_2'),
         ]
     )
 
