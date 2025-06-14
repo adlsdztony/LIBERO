@@ -45,6 +45,9 @@ VALIDATE_PREDICATE_FN_DICT = {
     "distancebetween": DistanceBetween(),
     "flexibleon": FlexibleOn(),
     "orientedatdegree": OrientedAtDegree(),
+    "orientationaligned": OrientationAligned(),
+    "axisalignedwithinworldaxis": AxisAlignedWithinWorldAxis(),
+    "midbetweenanydirection": MidBetweenAnyDirection(),
 }
 
 
