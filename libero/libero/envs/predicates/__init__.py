@@ -11,7 +11,11 @@ VALIDATE_PREDICATE_FN_DICT = {
     "all": All(),
     "in": In(),
     "equal": Equal(),
+    "difference": Difference(),
+    "greaterthan": GreaterThan(),
+    "lessthan": LessThan(),
     "distance": Distance(),
+    "planardistance": PlanarDistance(),
     "incontact": InContact(),
     "on": On(),
     "relaxedon": RelaxedOn(),
@@ -45,6 +49,7 @@ VALIDATE_PREDICATE_FN_DICT = {
     "distancebetween": DistanceBetween(),
     "flexibleon": FlexibleOn(),
     "orientedatdegree": OrientedAtDegree(),
+    "getorientation": GetOrientation(),
 }
 
 

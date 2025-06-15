@@ -188,6 +188,55 @@ class Equal(BinaryAtomic):
     def expected_arg_types(self):
         return [float, float, float]
 
+class Difference(BinaryAtomic):
+    """
+    Computes the difference between two float values.
+    
+    Args:
+        arg1: First float value.
+        arg2: Second float value.
+    Returns:
+        float: The difference between arg1 and arg2.
+    """
+    def __call__(self, arg1, arg2):
+        return arg1 - arg2
+
+    def expected_arg_types(self):
+        return [float, float]
+
+class GreaterThan(BinaryAtomic):
+    """
+    Checks if the first float value is greater than the second float value.
+    
+    Args:
+        arg1: First float value.
+        arg2: Second float value.
+    Returns:
+        bool: True if arg1 is greater than arg2, otherwise False.
+    """
+    def __call__(self, arg1, arg2):
+        return arg1 > arg2
+
+    def expected_arg_types(self):
+        return [float, float]
+
+
+class LessThan(BinaryAtomic):
+    """
+    Checks if the first float value is less than the second float value.
+    
+    Args:
+        arg1: First float value.
+        arg2: Second float value.
+    Returns:
+        bool: True if arg1 is less than arg2, otherwise False.
+    """
+    def __call__(self, arg1, arg2):
+        return arg1 < arg2
+
+    def expected_arg_types(self):
+        return [float, float]
+
 
 class Distance(BinaryAtomic):
     """
@@ -203,6 +252,24 @@ class Distance(BinaryAtomic):
         pos1 = arg1.get_geom_state()["pos"]
         pos2 = arg2.get_geom_state()["pos"]
         return np.linalg.norm(np.array(pos1) - np.array(pos2))
+
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState]
+    
+class PlanarDistance(BinaryAtomic):
+    """
+    Computes the planar distance (ignoring the z-axis) between two objects using their position data.
+    
+    Args:
+        arg1: The first object (BaseObjectState) whose position is used.
+        arg2: The second object (BaseObjectState) whose position is used.
+    Returns:
+        float: The planar distance between the positions of arg1 and arg2.
+    """
+    def __call__(self, arg1, arg2):
+        pos1 = arg1.get_geom_state()["pos"]
+        pos2 = arg2.get_geom_state()["pos"]
+        return np.linalg.norm(np.array(pos1[:2]) - np.array(pos2[:2]))
 
     def expected_arg_types(self):
         return [BaseObjectState, BaseObjectState]
@@ -550,8 +617,8 @@ class AxisAlignedWithin(UnaryAtomic):
         object_axis_world = R[:, axis_index]
         cos_angle = object_axis_world[2]
         
-        # # this is used to print the current angle of the axis with respect to Z+ for debugging
-        # # calculate current angle in degrees
+        # this is used to print the current angle of the axis with respect to Z+ for debugging
+        # calculate current angle in degrees
         # angle_rad = np.arccos(cos_angle)
         # angle_deg = np.degrees(angle_rad)
         # print(f"Current angle of {axis} axis with Z+ is {angle_deg:.2f} degrees")
@@ -1079,6 +1146,35 @@ class OrientedAtDegree(UnaryAtomic):
 
     def expected_arg_types(self):
         return [BaseObjectState, float, float, float, float, float, float]
+
+class GetOrientation(UnaryAtomic):
+    """
+    Get the orientation of the object in the specified format.
+    
+    Args:
+        arg: The object whose orientation is being checked.
+        orient: The type of orientation to return ('roll', 'pitch', or 'yaw').
+    
+    Returns:
+        float or np.array: The orientation value(s) in the specified format.
+    """
+    def __call__(self, arg, type):
+        geom = arg.get_geom_state()
+        w, x, y, z = geom["quat"]
+        quat = np.array([x, y, z, w])
+        R = transform_utils.quat2mat(quat)
+        
+        if type == "roll":
+            return np.degrees(transform_utils.mat2euler(R)[0])
+        elif type == "pitch":
+            return np.degrees(transform_utils.mat2euler(R)[1])
+        elif type == "yaw":
+            return np.degrees(transform_utils.mat2euler(R)[2])
+        else:
+            raise ValueError("Invalid orientation type. Choose from 'roll', 'pitch', 'yaw'.")
+    
+    def expected_arg_types(self):
+        return [BaseObjectState, str]
 
 
 class PositionWithinObjectAnnulus(UnaryAtomic):
