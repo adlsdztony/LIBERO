@@ -14,7 +14,7 @@ from libero.libero.benchmark.mu_creation import *
 
 def main():
     scene_name = "living_room_scene2"
-    language = "Place the cream cheese on the basket at an angle so it's tilted and lies against the basket."
+    language = "Place the cream cheese in the basket at an angle so it's tilted and lies against the basket."
     register_task_info(
         language,
         scene_name=scene_name,

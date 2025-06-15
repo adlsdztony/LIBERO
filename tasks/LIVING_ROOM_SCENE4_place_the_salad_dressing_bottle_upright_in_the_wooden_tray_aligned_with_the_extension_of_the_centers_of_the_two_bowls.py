@@ -12,18 +12,21 @@ from libero.libero.utils.task_generation_utils import (
 
 from libero.libero.benchmark.mu_creation import *
 
+
 def main():
-    scene_name = "living_room_scene2"
-    language = "Create a tower by placing the milk on the alphabet soup, and position the ketchup touching the base of this tower."
+    scene_name = "living_room_scene4"
+    language = "Place the salad dressing bottle upright in the wooden tray, aligned with the extension of the centers of the two bowls."
     register_task_info(
         language,
         scene_name=scene_name,
-        objects_of_interest=["milk_1", "alphabet_soup_1", "ketchup_1"],
+        objects_of_interest=['new_salad_dressing_1', 'akita_black_bowl_1', 'akita_black_bowl_2', 'wooden_tray_1'],
         goal_states=[
-            ("On", "milk_1", "alphabet_soup_1"),
-            ("InContact", "ketchup_1", "alphabet_soup_1")
-        ],
+            ('In', 'new_salad_dressing_1', 'wooden_tray_1_contain_region'),
+            ('AxisAlignedWithin', 'new_salad_dressing_1', 'y', 0, 10),
+            ('Linear', 'akita_black_bowl_1', 'akita_black_bowl_2', 'new_salad_dressing_1', 0.3),
+            ]
     )
+
 
     bddl_file_names, failures = generate_bddl_from_task_info()
     print(bddl_file_names)
