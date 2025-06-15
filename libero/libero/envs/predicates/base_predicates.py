@@ -1122,3 +1122,90 @@ class PositionWithinObjectAnnulus(UnaryAtomic):
 
 #     def expected_arg_types(self):
 #         return [BaseObjectState, BaseObjectState]
+
+class RightAngle(MultiarayAtomic):
+    """
+    Check if three objects form a right angle (90 degrees) with the middle object at the corner.
+    This predicate checks if the angle formed by the vectors from the corner object to the other two objects
+    is close to 90 degrees within a specified tolerance.
+    
+    Usage: RightAngle()(corner_object, object1, object2, tolerance_degrees)
+    Args:
+        corner_object: The object at the corner of the right angle (BaseObjectState).
+        object1: The first object forming one arm of the angle (BaseObjectState).
+        object2: The second object forming the other arm of the angle (BaseObjectState).
+        tolerance_degrees: The tolerance in degrees for the right angle check (float).
+    Returns:
+        bool: True if the angle is within tolerance_degrees of 90 degrees, False otherwise.
+    """
+    def __call__(self, corner_object, object1, object2, tolerance_degrees):
+        # Get positions in x-y plane (ignoring z for 2D angle calculation)
+        corner_pos = corner_object.get_geom_state()["pos"]
+        pos1 = object1.get_geom_state()["pos"]
+        pos2 = object2.get_geom_state()["pos"]
+        
+        # Create vectors from corner to each object (in x-y plane)
+        vec1 = np.array([pos1[0] - corner_pos[0], pos1[1] - corner_pos[1]])
+        vec2 = np.array([pos2[0] - corner_pos[0], pos2[1] - corner_pos[1]])
+        
+        # Calculate magnitudes
+        mag1 = np.linalg.norm(vec1)
+        mag2 = np.linalg.norm(vec2)
+        
+        # Avoid division by zero
+        if mag1 < 1e-6 or mag2 < 1e-6:
+            return False
+        
+        # Normalize vectors
+        vec1_norm = vec1 / mag1
+        vec2_norm = vec2 / mag2
+        
+        # Calculate dot product
+        dot_product = np.dot(vec1_norm, vec2_norm)
+        
+        # Clamp dot product to avoid numerical errors in arccos
+        dot_product = np.clip(dot_product, -1.0, 1.0)
+        
+        # Calculate angle in degrees
+        angle_rad = np.arccos(dot_product)
+        angle_deg = np.degrees(angle_rad)
+        
+        # Check if angle is within tolerance of 90 degrees
+        return abs(angle_deg - 90.0) <= tolerance_degrees
+    
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState, BaseObjectState, float]
+
+class OppositeSides(MultiarayAtomic):
+    """
+    Check if two objects are positioned on opposite sides of a third object (the divider).
+    This predicate checks if the divider object is between the two other objects along any axis,
+    indicating they are on opposite sides.
+    
+    Usage: OppositeSides()(object1, object2, divider_object)
+    Args:
+        object1: The first object (BaseObjectState).
+        object2: The second object (BaseObjectState).
+        divider_object: The object that should be between object1 and object2 (BaseObjectState).
+    Returns:
+        bool: True if the divider is between object1 and object2 along at least one axis, False otherwise.
+    """
+    def __call__(self, object1, object2, divider_object):
+        pos1 = object1.get_geom_state()["pos"]
+        pos2 = object2.get_geom_state()["pos"]
+        divider_pos = divider_object.get_geom_state()["pos"]
+        
+        # Check if divider is between object1 and object2 along any axis (x, y, or z)
+        for axis in range(3):  # x=0, y=1, z=2
+            # Check if divider position is between the two objects on this axis
+            if ((pos1[axis] <= divider_pos[axis] <= pos2[axis]) or 
+                (pos2[axis] <= divider_pos[axis] <= pos1[axis])):
+                # Also ensure the objects are actually separated (not at the same position)
+                if abs(pos1[axis] - pos2[axis]) > 0.01:  # minimum separation threshold
+                    return True
+        
+        return False
+    
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState, BaseObjectState]
+
