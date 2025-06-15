@@ -14,7 +14,7 @@ from libero.libero.benchmark.mu_creation import *
 
 def main():
     scene_name = "living_room_scene2"
-    language = "Move the milk until it contacts the orange juice. Keep all objects upright."
+    language = "Make the milk touch the orange juice with both upright on the table."
     register_task_info(
         language,
         scene_name=scene_name,
@@ -23,7 +23,9 @@ def main():
             ("InContact", "milk_1", "orange_juice_1"),
             ("AxisAlignedWithin", "milk_1", "y", 0, 15),
             ("AxisAlignedWithin", "orange_juice_1", "y", 0, 15),
-            ("PositionWithin", "orange_juice_1", 0, -0.25, 0.5, 0.1, 0.1, 0.01)
+            ("PositionWithin", "orange_juice_1", 0, -0.25, 0.5, 0.1, 0.1, 0.01),
+            ("InAir", "milk_1", 0.45),
+            ("InAir", "orange_juice_1", 0.45)
         ],
     )
 

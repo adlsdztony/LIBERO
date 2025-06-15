@@ -23,6 +23,8 @@ def main():
             ("InContact", "milk_1", "basket_1"),
             ("InContact", "orange_juice_1", "basket_1"),
             ("RelaxedBetween", "milk_1", "basket_1", "orange_juice_1", "y"),
+            ("Not", ("In", "milk_1", "basket_1_contain_region")),
+            ("Not", ("In", "orange_juice_1", "basket_1_contain_region")),
         ],
     )
 

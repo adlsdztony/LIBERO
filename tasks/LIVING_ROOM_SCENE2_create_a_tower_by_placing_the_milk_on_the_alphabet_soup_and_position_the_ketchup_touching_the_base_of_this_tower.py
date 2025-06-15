@@ -22,7 +22,8 @@ def main():
         goal_states=[
             ("On", "milk_1", "alphabet_soup_1"),
             ("InContact", "ketchup_1", "alphabet_soup_1"),
-            ("Not", ("On", "ketchup_1", "alphabet_soup_1")),
+            ("InAir", "alphabet_soup_1", 0.45),
+            ("InAir", "ketchup_1", 0.45)
         ],
     )
 
