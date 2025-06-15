@@ -1122,3 +1122,61 @@ class PositionWithinObjectAnnulus(UnaryAtomic):
 
 #     def expected_arg_types(self):
 #         return [BaseObjectState, BaseObjectState]
+
+class IsTouchingSideAxis(BinaryAtomic):
+    """
+    Checks if one object (arg1) is touching another object (arg2) along a specified local axis ('x', 'y', or 'z').
+
+    It verifies:
+    1. The two objects are in physical contact.
+    2. The vector from arg2's center to arg1's center is aligned with arg2's specified local axis.
+
+    Usage: IsTouchingSideAxis()(arg1, arg2, axis, dot_product_threshold)
+    Args:
+        arg1 (BaseObjectState): The object that is touching.
+        arg2 (BaseObjectState): The object whose side is being touched.
+        axis (str): The local axis of arg2 to check against. Must be 'x', 'y', or 'z'.
+        dot_product_threshold (float): A value between 0.0 and 1.0 for alignment tolerance. 
+                                     A higher value means stricter alignment. Recommended: ~0.85.
+    Returns:
+        bool: True if arg1 is touching the specified side of arg2, False otherwise.
+    """
+
+    def __call__(self, arg1, arg2, axis, doc_product_threshold):
+        axis = axis.lower()
+        if axis not in ["x", "y", "z"]:
+            raise ValueError("Axis must be one of 'x', 'y', or 'z'")
+        
+        # 1. Quick check for physical contact
+        if not arg1.check_contact(arg2):
+            return False
+        
+        geom1 = arg1.get_geom_state()
+        geom2 = arg2.get_geom_state()
+        pos1 = geom1["pos"]
+        pos2 = geom2["pos"]
+
+        # 2. Calculate the normalized vector from arg1 to arg2
+        vector_2_to_1 = np.array(pos2) - np.array(pos1)
+        if np.linalg.norm(vector_2_to_1) < 1e-6:
+            return False
+        vector_2_to_1 /= np.linalg.norm(vector_2_to_1)
+
+        # 4. Determine the direction of arg2's specified local axis
+        w, x, y, z = geom2["quat"]
+        quat_for_rs = np.array([x, y, z, w])
+        R2 = transform_utils.quat2mat(quat_for_rs)
+
+        # 5. Map the specified axis to the corresponding column in the rotation matrix
+        axis_index = {"x": 0, "y": 1, "z": 2}[axis]
+        target_axis_vector = R2[:, axis_index]
+
+        # 6. Calculate the dot product to measure alignment
+        dot_product = np.dot(vector_2_to_1, target_axis_vector)
+
+        # print(f"Dot product for {axis}-axis: {dot_product:.4f} (Threshold: {doc_product_threshold})")
+
+        return abs(dot_product) >= doc_product_threshold
+
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState, str, float]
