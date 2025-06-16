@@ -791,6 +791,58 @@ class AxisAlignedWithinY(UnaryAtomic):
     def expected_arg_types(self):
         return [BaseObjectState, str, float, float]
 
+class AxisAlignedWithinY(UnaryAtomic):
+    """
+    Check if the object's specified axis is within a degree range [min_deg, max_deg]
+    from alignment with the world Y+ axis.
+
+    Usage: AxisAlignedWithinY()(object, min_deg, max_deg)
+    Args:
+        obj: The object whose orientation is being checked.
+        axis: A string indicating the axis ('x', 'y', or 'z') to check.
+        min_deg: Minimum angle in degrees for the axis to be considered aligned.
+        max_deg: Maximum angle in degrees for the axis to be considered aligned.
+    Returns:
+        bool: True if the object's specified axis is within the degree range from alignment with Z+,
+        False otherwise.
+    Raises:
+        ValueError: If the axis is not one of 'x', 'y', or 'z', or if the degree range is invalid.
+    """
+
+    def __call__(self, *args):
+        if len(args) != 4:
+            raise ValueError("AxisAlignedWithinY expects 4 arguments: object, axis ('x', 'y', 'z'), min_degree, max_degree")
+        obj, axis, min_deg, max_deg = args
+        if axis not in {"x", "y", "z"}:
+            raise ValueError("Axis must be one of 'x', 'y', or 'z'")
+        if not (0 <= min_deg <= max_deg <= 180):
+            raise ValueError("Degrees must satisfy 0 <= min_deg <= max_deg <= 180")
+
+        min_rad = np.radians(min_deg)
+        max_rad = np.radians(max_deg)
+        cos_min = np.cos(min_rad)
+        cos_max = np.cos(max_rad)
+
+        geom = obj.get_geom_state()
+        w, x, y, z = geom["quat"]
+        quat_for_rs = np.array([x, y, z, w])
+        R = transform_utils.quat2mat(quat_for_rs)
+
+        axis_index = {"x": 0, "y": 1, "z": 2}[axis]
+        object_axis_world = R[:, axis_index]
+        cos_angle = object_axis_world[1]
+        
+        # # this is used to print the current angle of the axis with respect to Z+ for debugging
+        # # calculate current angle in degrees
+        # angle_rad = np.arccos(cos_angle)
+        # angle_deg = np.degrees(angle_rad)
+        # print(f"Current angle of {axis} axis with Z+ is {angle_deg:.2f} degrees")
+
+        return cos_max <= cos_angle <= cos_min
+
+    def expected_arg_types(self):
+        return [BaseObjectState, str, float, float]
+
 class PrintGeomState(UnaryAtomic):
     """
     Print the geometry state of an object at specified intervals.
