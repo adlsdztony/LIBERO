@@ -26,7 +26,6 @@ def main():
             ("RelaxedOn", "porcelain_mug_1", "white_yellow_mug_1"),
             ("AxisAlignedWithin", "porcelain_mug_1", "z", 80, 100),
             ("AxisAlignedWithin", "white_yellow_mug_1", "z", 0, 5),
-            ()
         ],
     )
 

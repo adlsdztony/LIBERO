@@ -16,7 +16,7 @@ from libero.libero.benchmark.mu_creation import *
 def main():
 
     scene_name = "kitchen_scene10"
-    language = "Position all three movable food items in a straight line with the chocolate pudding in the middle"
+    language = "Position all three movable food items in a straight line on the table with the chocolate pudding in the middle"
     register_task_info(
         language,
         scene_name=scene_name,
