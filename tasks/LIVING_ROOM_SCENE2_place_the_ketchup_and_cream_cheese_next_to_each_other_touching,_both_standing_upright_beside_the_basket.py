@@ -14,7 +14,7 @@ from libero.libero.benchmark.mu_creation import LivingRoomScene2
 def main():
 
     scene_name = "living_room_scene2"
-    language = "Place the ketchup and cream cheese next to each other touching, both standing upright beside the basket"
+    language = "Place the ketchup and cream cheese next to each other touching, both standing upright with cream cheese touching the basket"
     register_task_info(
         language,
         scene_name=scene_name,
@@ -23,8 +23,7 @@ def main():
             ("AxisAlignedWithin", "ketchup_1", "y", 0, 5),
             ("AxisAlignedWithin", "cream_cheese_1", "z", 85, 95),
             ("InContact", "ketchup_1", "cream_cheese_1"),
-            ("PositionWithinObjectAnnulus", "cream_cheese_1", "basket_1", 0.08, 0.15),
-            ("PositionWithinObjectAnnulus", "ketchup_1", "basket_1", 0.08, 0.15),        
+            ("InContact", "cream_cheese_1", "basket_1")      
         ],
     )
 

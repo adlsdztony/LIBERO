@@ -24,8 +24,7 @@ def main():
             ("UpsideDown", "basket_1"),
             ("Not", ("In", "orange_juice_1", "basket_1_contain_region")),
             ("Equal", ("GetPosi", "basket_1", "z"), 0.582, 0.001),
-            ("InContact", "orange_juice_1", "basket_1"),
-            ("Above", "orange_juice_1", "basket_1"),
+            ("On", "orange_juice_1", "basket_1"),
         ],
     )
 
