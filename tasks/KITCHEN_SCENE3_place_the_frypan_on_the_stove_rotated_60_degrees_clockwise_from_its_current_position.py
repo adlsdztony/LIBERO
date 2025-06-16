@@ -22,8 +22,8 @@ def main():
         scene_name=scene_name,
         objects_of_interest=["chefmate_8_frypan_1"],
         goal_states=[
-            ('AxisAlignedWithiny', 'chefmate_8_frypan_1', 'x', 55, 65),
-            ('AxisAlignedWithiny', 'chefmate_8_frypan_1', 'y', 25, 35),
+            ('AxisAlignedWithinWorldAxis', 'chefmate_8_frypan_1', 'x', 55, 65, 'y'),
+            ('AxisAlignedWithinWorldAxis', 'chefmate_8_frypan_1', 'y', 25, 35, 'y'),
         ]
     )
 

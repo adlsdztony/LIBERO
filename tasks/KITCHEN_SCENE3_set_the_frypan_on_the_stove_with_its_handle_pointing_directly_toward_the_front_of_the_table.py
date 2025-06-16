@@ -20,10 +20,11 @@ def main():
     register_task_info(
         language,
         scene_name=scene_name,
-        objects_of_interest=["chefmate_8_frypan_1"],
+        objects_of_interest=["chefmate_8_frypan_1",],
         goal_states=[
-            ('AxisAlignedWithiny', 'chefmate_8_frypan_1', 'x', 85, 95),
-            ('AxisAlignedWithiny', 'chefmate_8_frypan_1', 'y', 0, 5),
+            ('AxisAlignedWithinWorldAxis', 'chefmate_8_frypan_1', 'x', 85, 95, 'y'),
+            ('AxisAlignedWithinWorldAxis', 'chefmate_8_frypan_1', 'y', 0, 5, 'y'),
+            ('On', 'chefmate_8_frypan_1', 'flat_stove_1')
         ]
     )
 

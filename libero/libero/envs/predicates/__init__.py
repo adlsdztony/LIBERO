@@ -31,7 +31,7 @@ VALIDATE_PREDICATE_FN_DICT = {
     "upsidedown": UpsideDown(),
     "upright": Upright(),
     "axisalignedwithin": AxisAlignedWithin(),
-    "axisalignedwithiny": AxisAlignedWithinY(),
+    "axisalignedwithinworldaxis": AxisAlignedWithinWorldAxis(),
     "under": Under(),
     "posigreaterthan": PosiGreaterThan(),
     "posigreaterthanobject": PosiGreaterThanObject(),
@@ -50,7 +50,6 @@ VALIDATE_PREDICATE_FN_DICT = {
     "distancebetween": DistanceBetween(),
     "flexibleon": FlexibleOn(),
     "orientedatdegree": OrientedAtDegree(),
-    "axisalignedwithinworldaxis": AxisAlignedWithinWorldAxis(),
     "istouchingsideaxis": IsTouchingSideAxis(),
 }
 

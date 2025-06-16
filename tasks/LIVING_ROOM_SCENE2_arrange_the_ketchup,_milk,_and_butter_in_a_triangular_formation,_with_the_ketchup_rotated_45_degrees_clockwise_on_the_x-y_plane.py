@@ -20,7 +20,7 @@ def main():
         scene_name=scene_name,
         objects_of_interest=["ketchup_1", "milk_1", "butter_1"],
         goal_states=[
-            ("AxisAlignedWithinY", "ketchup_1", "z", 40, 50),
+            ("AxisAlignedWithinWorldAxis", "ketchup_1", "z", 40, 50, 'y'),
             ("Not", ("Linear", "ketchup_1", "milk_1", "butter_1", 0.01)),
             ("Equal", ("GetPosi", "ketchup_1", "z"), 0.509, 0.001),
             ("Equal", ("GetPosi", "milk_1", "z"), 0.506, 0.001),
