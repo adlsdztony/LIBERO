@@ -24,6 +24,7 @@ def main():
         goal_states=[
             ('In', 'chocolate_pudding_1', 'wooden_tray_1_contain_region'), 
             ('UpsideDown', 'chocolate_pudding_1'),
+            ('InContact', 'chocolate_pudding_1', 'wooden_tray_1')
             ('Equal', ('GetPosi', 'chocolate_pudding_1', 'z'), 0.458, 0.001),
         ]
     )

@@ -16,7 +16,7 @@ from libero.libero.benchmark.mu_creation import *
 def main():
 
     scene_name = "kitchen_scene10"
-    language = "Place the bowl in the drawer with the chocolate pudding positioned directly underneath it"
+    language = "Place the bowl inside the pulled-out drawer, with the chocolate pudding positioned directly beneath the bowl on the table"
     register_task_info(
         language,
         scene_name=scene_name,

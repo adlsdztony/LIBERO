@@ -14,7 +14,7 @@ from libero.libero.benchmark.mu_creation import LivingRoomScene2
 def main():
 
     scene_name = "living_room_scene2"
-    language = "Turn the basket upside down and place the orange juice on top of its center"
+    language = "Turn the basket upside down and place the orange juice upright on top of its center"
     register_task_info(
         language,
         scene_name=scene_name,

@@ -23,6 +23,8 @@ def main():
             ("RelaxedBetween", "milk_1", "basket_1", "orange_juice_1", "y"),
             ("Linear", "milk_1", "basket_1", "orange_juice_1", 0.001),
             ("Not", ("DistanceBetween", "milk_1", "basket_1", 0.061, 0.061, 0.1)),
+            ("Not",("In", "milk_1", "basket_1_contain_region"),)
+            ("Not",("In", "orange_juice_1", "basket_1_contain_region"),)
         ],
     )
 
