@@ -15,23 +15,13 @@ from libero.libero.benchmark.mu_creation import *
 
 def main():
     scene_name = "living_room_scene4"
-    language = "Arrange the chocolate pudding and one bowl in the tray at the same height"
+    language = "Put the chocolate pudding and one bowl into the tray"
     register_task_info(
         language,
         scene_name=scene_name,
         objects_of_interest=['chocolate_pudding_1', 'wooden_tray_1', 'akita_black_bowl_1', 'akita_black_bowl_2'],
         goal_states=[
-            ('Or',
-                ('And',
-                    ('In', 'akita_black_bowl_1', 'wooden_tray_1_contain_region'),
-                    ('SameHeight', 'akita_black_bowl_1', 'chocolate_pudding_1')
-                ),
-                ('And',
-                    
-                    ('In', 'akita_black_bowl_2', 'wooden_tray_1_contain_region'),
-                    ('SameHeight', 'akita_black_bowl_2', 'chocolate_pudding_1')
-                ),
-            ),
+            ('Or', ('In', 'akita_black_bowl_1', 'wooden_tray_1_contain_region'), ('In', 'akita_black_bowl_2', 'wooden_tray_1_contain_region')),
             ('In', 'chocolate_pudding_1', 'wooden_tray_1_contain_region'), 
             ]
     )
