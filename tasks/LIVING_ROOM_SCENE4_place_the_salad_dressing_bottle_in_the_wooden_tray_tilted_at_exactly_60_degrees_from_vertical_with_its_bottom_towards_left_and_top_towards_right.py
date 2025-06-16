@@ -17,19 +17,14 @@ from libero.libero.benchmark.mu_creation import *
 def main():
     # living_room_scene_4
     scene_name = "living_room_scene4"
-    language = "Place the salad dressing bottle in the wooden tray tilted at exactly 60 degrees from vertical"
+    language = "Place the salad dressing bottle in the wooden tray tilted at exactly 60 degrees from vertical with its bottom towards left and top towards right"
     register_task_info(
         language,
         scene_name=scene_name,
         objects_of_interest=["new_salad_dressing_1", "wooden_tray_1"],
         goal_states=
             [('In', 'new_salad_dressing_1', 'wooden_tray_1_contain_region'),
-             ("Any",(
-              ('AxisAlignedWithin', 'new_salad_dressing_1', 'x', '55', '65'),
-              ('AxisAlignedWithin', 'new_salad_dressing_1', 'y', '55', '65'),
               ('AxisAlignedWithin', 'new_salad_dressing_1', 'x', '115', '125'),
-              ('AxisAlignedWithin', 'new_salad_dressing_1', 'y', '115', '125'),
-    ))
         ]
     )
 
