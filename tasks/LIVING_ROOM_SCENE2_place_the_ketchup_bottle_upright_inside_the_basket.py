@@ -21,8 +21,7 @@ def main():
         objects_of_interest=["ketchup_1", "basket_1"],
         goal_states=[
             ("AxisAlignedWithin", "ketchup_1", "y", 0, 10),
-            ("InContact", "ketchup_1", "basket_1"),
-            ("DistanceBetween", "ketchup_1", "basket_1", 0.04, 0.04, 0.1),
+            ("In", "ketchup_1", "basket_1_contain_region"),
         ],
     )
 

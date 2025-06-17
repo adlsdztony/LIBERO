@@ -14,16 +14,17 @@ from libero.libero.benchmark.mu_creation import LivingRoomScene2
 def main():
 
     scene_name = "living_room_scene2"
-    language = "Place the milk flat next to the basket"
+    language = "Place the milk flat on the table, right next to and touching the basket"
     register_task_info(
         language,
         scene_name=scene_name,
         objects_of_interest=["milk_1", "basket_1"],
         goal_states=[
             ("AxisAlignedWithin", "milk_1", "y", 85, 95),
-            ("PositionWithinObjectAnnulus", "milk_1", "basket_1", 0.08, 0.15),
             ("Not", ("In", "milk_1", "basket_1_contain_region")),
+            ("InContact", "milk_1", "basket_1")
             ("Equal", ("GetPosi", "milk_1", "z"), 0.463, 0.001),
+            ("Equal", ("GetPosi", "basket_1", "z"), 0.432, 0.001),
         ],
     )
 

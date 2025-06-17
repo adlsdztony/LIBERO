@@ -20,12 +20,10 @@ def main():
         scene_name=scene_name,
         objects_of_interest=["milk_1", "basket_1"],
         goal_states=[
-            ("DistanceBetween", "milk_1", "basket_1", 0.04, 0.04, 0.2),
-            ("PosiLessThan", "milk_1", "z", 0.515),
-            ("PosiGreaterThanObject", "milk_1", "basket_1", "z", 0),
+            ("In", "milk_1", "basket_1_contain_region"),
             ("InContact", "milk_1", "basket_1"),
             ("AxisAlignedWithin", "milk_1", "y", 100, 175),
-            ("AxisAlignedWithinY", "milk_1", "y", 10, 80),
+            ("AxisAlignedWithinWorldAxis", "milk_1", "y", 10, 80, "y"),
         ],
     )
 
