@@ -30,7 +30,7 @@ def main():
              ('All', ('InContact', 'new_salad_dressing_1', 'akita_black_bowl_2'),
                    ('In', 'akita_black_bowl_2', 'wooden_tray_1_contain_region'),
                    ('Upright','akita_black_bowl_2'))),
-             ('InContact', 'new_salad_dressing_1', 'akita_black_bowl_2')),
+             ('InContact', 'new_salad_dressing_1', 'akita_black_bowl_2'),
              ('Not', ('AxisAlignedWithin', 'new_salad_dressing_1', 'y', '0', '5')),
         ],
     )
