@@ -304,6 +304,7 @@ if __name__ == "__main__":
     )
 
     env = DataCollectionWrapper(env, tmp_directory)
+    
     # initialize device
     if args.device == "keyboard":
         from robosuite.devices import Keyboard
