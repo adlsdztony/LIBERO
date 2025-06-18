@@ -22,6 +22,7 @@ def main():
         objects_of_interest=['chocolate_pudding_1', 'wooden_tray_1', 'new_salad_dressing_1'],
         goal_states=[
             ('In', 'new_salad_dressing_1', 'wooden_tray_1_contain_region'), 
+            ('In', 'chocolate_pudding_1', 'wooden_tray_1_contain_region'), 
             ('Or',
                 ('AxisAlignedWithin', 'new_salad_dressing_1', 'z', 0, 10),
                 ('AxisAlignedWithin', 'new_salad_dressing_1', 'z', 170, 180),

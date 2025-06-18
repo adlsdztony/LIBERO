@@ -14,7 +14,7 @@ from libero.libero.benchmark.mu_creation import *
 
 def main():
     scene_name = "living_room_scene2"
-    language = "Place the ketchup upside down in contact with the milk with both items on the table"
+    language = "Place the ketchup upside down in contact with the milk with both objects on the table"
     register_task_info(
         language,
         scene_name=scene_name,

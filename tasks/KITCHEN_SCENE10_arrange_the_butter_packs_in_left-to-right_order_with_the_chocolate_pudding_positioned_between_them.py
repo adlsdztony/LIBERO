@@ -15,7 +15,7 @@ from libero.libero.benchmark.mu_creation import *
 def main():
 
     scene_name = "kitchen_scene10"
-    language = "Arrange the butter packs in left-to-right order with the chocolate pudding positioned between them"
+    language = "Line two butters and the chocolate pudding up on the table with the pudding lying between two butters"
     register_task_info(
         language,
         scene_name=scene_name,
