@@ -19,6 +19,7 @@ VALIDATE_PREDICATE_FN_DICT = {
     "incontact": InContact(),
     "on": On(),
     "relaxedon": RelaxedOn(),
+    "thresholdon": ThresholdOn(),
     "up": Up(),
     "stackbowl": StackBowl(),
     "printjointstate": PrintJointState(),
