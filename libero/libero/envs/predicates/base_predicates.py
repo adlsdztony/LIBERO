@@ -375,6 +375,28 @@ class RelaxedOn(BinaryAtomic):
         return [BaseObjectState, BaseObjectState]
 
 
+class ThresholdOn(BinaryAtomic):
+    """
+    With center alignement constraint (original) wihin threhold
+    Check if arg1 is on top of arg2.
+    This predicate checks if the first object (arg1) is on top of the second object (arg2),
+    without any center alignment constraint.
+    
+    Usage: ThresholdOn()(arg1, arg2, threshold)
+    Args:
+        arg1: The object expected to be on top.
+        arg2: The object expected to be underneath.
+        threshold: The distance X meters from the center
+    Returns:
+        bool: True if arg1 is on top of arg2, False otherwise.
+    """
+    def __call__(self, arg1, arg2, threshold):
+        return arg2.check_ontop(arg1, threshold=threshold)
+
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState, float]
+
+
 class PositionWithin(UnaryAtomic):
     """
     Check if the object's position is within a certain threshold of a specified position.
