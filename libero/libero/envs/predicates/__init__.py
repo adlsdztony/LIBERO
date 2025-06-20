@@ -65,6 +65,7 @@ VALIDATE_PREDICATE_FN_DICT = {
     "axisalignedwithinworldaxis": AxisAlignedWithinWorldAxis(),
     "istouchingsideaxis": IsTouchingSideAxis(),
     "neuraljudge": NeuralJudge(),
+    "relaxedin": RelaxedIn(),
 }
 
 # wrapper predicates
