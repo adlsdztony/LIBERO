@@ -73,6 +73,17 @@ def collect_scripted_trajectory(
                 pose_index += 1
                 continue
 
+        # Append several duplicate steps to hold the pose
+        duplicate_steps = 100
+        last_step = result["position"][-1]
+        last_vel = result["velocity"][-1]
+        result["position"] = np.concatenate(
+            [result["position"], np.tile(last_step, (duplicate_steps, 1))], axis=0
+        )
+        result["velocity"] = np.concatenate(
+            [result["velocity"], np.tile(last_vel, (duplicate_steps, 1))], axis=0
+        )
+
         # Execute the planned trajectory
         n_steps = result["position"].shape[0]
         print(f"Executing trajectory with {n_steps} steps")
@@ -80,24 +91,26 @@ def collect_scripted_trajectory(
         for i in range(n_steps):
             count += 1
 
-
             # JOINT POSITION
             planned_joints = result["position"][i]
-            print(f"Planned joints: {[f'{j:.3f}' for j in planned_joints]}")
+            # print(f"Planned joints: {[f'{j:.3f}' for j in planned_joints]}")
             current_joints = planner.get_current_joint_positions(obs)
-            print(f"Current joints: {[f'{j:.3f}' for j in obs['robot0_joint_pos']]}")
+            # print(f"Current joints: {[f'{j:.3f}' for j in obs['robot0_joint_pos']]}")
             action = np.zeros(8)
             # action[:7] = planned_joints
             action[:7] = planned_joints - current_joints
 
             # JOINT VELOCITY
-            action = np.zeros(8)
-            action[:7] = result["velocity"][i]
+            # action = np.zeros(8)
+            # action[:7] = result["velocity"][i]
 
             print(f"Action to take: {[f'{a:.3f}' for a in action]}")
             
             # Step the environment
             obs, reward, done, info = env.step(action)
+            if count % 30 == 0:
+                print(obs["robot0_eef_pos"], obs["robot0_eef_quat"])
+                # print(obs["robot0_joint_pos"])
 
             env.render()
 
@@ -147,16 +160,19 @@ def get_scripted_poses_for_task(problem_name, language_instruction):
     Returns:
         list: List of target poses [[x,y,z,qx,qy,qz,qw], ...]
     """
-    
+    KITCHEN_SCENE_ROBOT_POS_OFFSET = [-0.66, 0, 0.9]
+    robot_pos_offset = KITCHEN_SCENE_ROBOT_POS_OFFSET
     # Default poses - modify these based on your tasks
-    default_poses = [
-        [0.4, 0.3, 0.12, 0, 1, 0, 0],
-        [0.4, 0.3, 0.8, 0, 1, 0, 0],
+    poses = [
+        # [0, 0, 1, 0, 1, 0, 0]
+        # [0.00206556, -0.15240053, 1.09415877, 0.69903985, 0.71446188, 0.02918334, 0.00598762]
+        [ 0.01861123, -0.16616471,  1.1038921, 0.74729594, 0.66147855, 0.02272578, 0.05897825 ]
     ]
-    
+    for pose in poses:
+        pose[0] -= robot_pos_offset[0]
+        pose[1] -= robot_pos_offset[1]
+        pose[2] -= robot_pos_offset[2]
 
-    poses = default_poses
-    
     print(f"Using {len(poses)} scripted poses for task: {language_instruction}")
     return poses
 
@@ -293,6 +309,12 @@ if __name__ == "__main__":
 
     # Get controller config
     controller_config = load_controller_config(default_controller=args.controller)
+    controller_config["kp"] = 150.0
+    controller_config["damping_ratio"] = 0.0
+    print("Controller config", controller_config)
+        # Controller config {'type': 'JOINT_POSITION', 'input_max': 1, 'input_min': -1, 'output_max': 0.05, 'output_min': -0.05,
+        #  'kp': 300.0, 'damping_ratio': 0.0, 'impedance_mode': 'fixed', 'kp_limits': [0, 300], 'damping_ratio_limits': [0, 10], 
+        # 'qpos_limits': None, 'interpolation': None, 'ramp_ratio': 0.2}
 
     # Create argument configuration
     config = {

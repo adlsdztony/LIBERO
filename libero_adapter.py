@@ -18,6 +18,7 @@ class LiberoMPLibAdapter:
             urdf=urdf_path,
             srdf=srdf_path,
             move_group=move_group,
+            joint_vel_limits=np.full(7, 0.3),
         )
         
     def get_current_joint_positions(self, obs):
