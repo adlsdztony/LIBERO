@@ -13,7 +13,7 @@ import robosuite.macros as macros
 import mujoco
 
 import libero.libero.envs.bddl_utils as BDDLUtils
-from libero.libero.envs.predicates.predicate_wrapper import Constraint
+from libero.libero.envs.predicates.predicate_wrapper import Constraint, StatefulWrapper
 from libero.libero.envs.robots import *
 from libero.libero.envs.utils import *
 from libero.libero.envs.object_states import *
@@ -901,7 +901,7 @@ class BDDLBaseDomain(SingleArmEnv):
         if variable_len_predicate:
             evaluated_args = (tuple(evaluated_args),)
 
-        if isinstance(predicate_fn, Constraint):
+        if isinstance(predicate_fn, StatefulWrapper):
             predicate_str = f"{str(state)}"
             return predicate_fn(predicate_str, *evaluated_args)
         
