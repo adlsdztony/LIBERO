@@ -1484,3 +1484,51 @@ class IsTouchingSideAxis(BinaryAtomic):
     def expected_arg_types(self):
         return [BaseObjectState, BaseObjectState, str, float]
 
+class OppositeDirection(MultiarayAtomic):
+    """
+    Check if two objects are pointing in opposite directions along a specified axis 
+    within a given angular tolerance in degrees.
+    
+    Args:
+        arg1: The first object (BaseObjectState) to compare orientation.
+        arg2: The second object (BaseObjectState) to compare orientation.
+        axis: A string indicating which axis to use for direction comparison ('x', 'y', or 'z').
+        epsilon_degrees: A float value representing the angular tolerance in degrees.
+
+    Returns:
+        bool: True if the objects are pointing in opposite directions along the
+              specified axis within the tolerance, False otherwise.
+    """
+    
+    def __call__(self, arg1, arg2, axis, epsilon_degrees):
+        if axis not in {"x", "y", "z"}:
+            raise ValueError("Axis must be one of 'x', 'y', or 'z'")
+        
+        # Get quaternions from both objects
+        geom1 = arg1.get_geom_state()
+        geom2 = arg2.get_geom_state()
+        w1, x1, y1, z1 = geom1["quat"]
+        w2, x2, y2, z2 = geom2["quat"]
+        
+        # Convert to numpy arrays in (x, y, z, w) format for transform_utils
+        q1 = np.array([x1, y1, z1, w1])
+        q2 = np.array([x2, y2, z2, w2])
+        R1 = transform_utils.quat2mat(q1)
+        R2 = transform_utils.quat2mat(q2)
+        
+        # Extract the specified axis direction vectors
+        axis_index = {"x": 0, "y": 1, "z": 2}[axis]
+        direction1 = R1[:, axis_index]
+        direction2 = R2[:, axis_index]
+        
+        # Calculate the dot product to find the angle between directions
+        dot_product = np.dot(direction1, direction2)
+        dot_product = np.clip(dot_product, -1.0, 1.0)
+        angle_radians = np.arccos(dot_product)
+        angle_degrees = np.rad2deg(angle_radians)
+        
+        target_angle = 180.0
+        return abs(angle_degrees - target_angle) <= epsilon_degrees
+    
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState, str, float]
