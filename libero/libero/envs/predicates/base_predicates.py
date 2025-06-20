@@ -1017,7 +1017,56 @@ class MidBetween(MultiarayAtomic):
 
     def expected_arg_types(self):
         return [BaseObjectState, BaseObjectState, BaseObjectState, str]
-      
+    
+class MidBetweenAnyDirection(MultiarayAtomic):
+    """
+    Checks if the middle object (M) is between the left object (L) and the right object (R)
+    in any direction (not limited to a specific axis), by checking the angle between LM and MR vectors.
+
+    Usage: MidBetweenAnyDirection()(L, M, R, ignore_z=True, angle_threshold=30)
+    Args:
+        L: The first object (BaseObjectState).
+        M: The middle object (BaseObjectState).
+        R: The third object (BaseObjectState).
+        ignore_z: If True, only consider the xy plane.
+        angle_threshold: The maximum angle (in degrees) allowed between LM and MR (suggested: 30).
+    Returns:
+        bool: True if the angle between LM and MR is less than angle_threshold degrees,
+              and L is in contact with M, and M is in contact with R.
+    """
+    def __call__(self, L, M, R, ignore_z=True, angle_threshold=30):
+        pos_L = np.array(L.get_geom_state()["pos"])
+        pos_M = np.array(M.get_geom_state()["pos"])
+        pos_R = np.array(R.get_geom_state()["pos"])
+
+        if ignore_z:
+            pos_L = pos_L[:2]
+            pos_M = pos_M[:2]
+            pos_R = pos_R[:2]
+
+        v_LM = pos_M - pos_L
+        v_MR = pos_R - pos_M
+
+        norm_LM = np.linalg.norm(v_LM)
+        norm_MR = np.linalg.norm(v_MR)
+        if norm_LM == 0 or norm_MR == 0:
+            return False  # Avoid division by zero
+
+        cos_angle = np.dot(v_LM, v_MR) / (norm_LM * norm_MR)
+        # Clamp to [-1, 1] to avoid numerical issues
+        cos_angle = np.clip(cos_angle, -1.0, 1.0)
+        # Convert angle_threshold to cosine
+        angle_threshold_rad = np.radians(angle_threshold)
+        cos_threshold = np.cos(angle_threshold_rad)
+
+        return (
+            cos_angle > cos_threshold
+            and L.check_contact(M)
+            and M.check_contact(R)
+        )
+
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState, BaseObjectState, bool, float]
     
 class RelaxedMidBetween(MultiarayAtomic):
     """
@@ -1411,7 +1460,6 @@ class OppositeSides(MultiarayAtomic):
         return [BaseObjectState, BaseObjectState, BaseObjectState]
 
 
-
 class NeuralJudge(MultiarayAtomic):
     def __init__(self):
         super().__init__()
@@ -1420,7 +1468,8 @@ class NeuralJudge(MultiarayAtomic):
         return False
 
     def expected_arg_types(self):
-        return []
+        return [str]
+
     
 class PosiSameWith(BinaryAtomic):
     """
@@ -1505,4 +1554,50 @@ class IsTouchingSideAxis(BinaryAtomic):
 
     def expected_arg_types(self):
         return [BaseObjectState, BaseObjectState, str, float]
+class YawAngleAligned(BinaryAtomic):
+    """
+    Check if the yaw (rotation around z-axis) of two objects are aligned within a specified threshold (in degrees),
+    after applying an offset to the second object's yaw.
+
+    Usage: YawAngleAligned()(obj1, obj2, yaw_thresh, yaw_offset)
+    Arguments:
+    - obj1: The first object.
+    - obj2: The second object.
+    - yaw_thresh: Allowed deviation for yaw in degrees.
+    - yaw_offset: Offset (in degrees) to apply to obj2's yaw before comparison.
+
+    Returns:
+    - True if the absolute difference of yaw (with offset) is within its threshold (using acute angle).
+    """
+    def __call__(self, obj1, obj2, yaw_thresh, yaw_offset):
+        geom1 = obj1.get_geom_state()
+        geom2 = obj2.get_geom_state()
+        w1, x1, y1, z1 = geom1["quat"]
+        w2, x2, y2, z2 = geom2["quat"]
+        quat1 = np.array([x1, y1, z1, w1])
+        quat2 = np.array([x2, y2, z2, w2])
+        R1 = transform_utils.quat2mat(quat1)
+        R2 = transform_utils.quat2mat(quat2)
+        _, _, yaw1 = transform_utils.mat2euler(R1)
+        _, _, yaw2 = transform_utils.mat2euler(R2)
+        # Convert to degrees
+        yaw1 = np.degrees(yaw1)
+
+        def clamp_angle(angle):
+            """Clamp any angle to the range [-180, 180] degrees."""
+            return ((angle % 360) + 180) % 360 - 180
+
+        yaw2 = clamp_angle(np.degrees(yaw2) + yaw_offset)
+
+        def acute_diff(a, b):
+            diff = abs(a - b)
+            if diff > 180:
+                diff = 360 - diff
+            return diff
+
+        within_yaw = acute_diff(yaw1, yaw2) <= yaw_thresh
+        return within_yaw
+
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState, float, float]
 

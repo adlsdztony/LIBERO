@@ -55,6 +55,9 @@ class ObjectState(BaseObjectState):
         return {"pos": object_pos, "quat": object_quat}
 
     def check_contact(self, other):
+        if isinstance(other, RobotObjectState):
+            # If the other object is a robot component, use its check_contact method
+            return other.check_contact(self)
         object_1 = self.env.get_object(self.object_name)
         object_2 = self.env.get_object(other.object_name)
         return self.env.check_contact(object_1, object_2)
@@ -247,6 +250,7 @@ class RobotObjectState(BaseObjectState):
         self.env = env
         self.geom_name = geom_name
         self.object_state_type = "robot"
+        self.last_contact = None
         
     def get_geom_state(self):
         """Get the geometric state of the robot component"""
@@ -284,14 +288,22 @@ class RobotObjectState(BaseObjectState):
                 except:
                     continue
         
+        # if self.last_contact is not None and self.env.sim.data.ncon == self.last_contact:
+        #     return False
+        # self.last_contact = self.env.sim.data.ncon
+        # print()
         # Check contacts in the simulation
         for i in range(self.env.sim.data.ncon):
             contact = self.env.sim.data.contact[i]
             geom1_id = contact.geom1
             geom2_id = contact.geom2
+
+            # geom1_name = self.env.sim.model.geom_id2name(geom1_id)
+            # geom2_name = self.env.sim.model.geom_id2name(geom2_id)
+            # if geom1_name and geom2_name:
+            #     print(f"Contact geom names: {geom1_name}, {geom2_name}")
             
             if (geom_id == geom1_id and geom2_id in other_geom_ids) or \
                (geom_id == geom2_id and geom1_id in other_geom_ids):
                 return True
-                
         return False

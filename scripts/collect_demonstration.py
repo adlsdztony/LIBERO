@@ -27,7 +27,8 @@ llm_judge = LLMJudge(
 
 def collect_human_trajectory(
     env, device, arm, env_configuration, problem_info, remove_directory=[], 
-    sample=False, ep_image_directory=None, sample_freq=100, sample_width=256, sample_height=256
+    sample=False, ep_image_directory=None, neural_task=None,
+    n_images=10, sample_freq=150, sample_width=960, sample_height=512
 ):
     """
     Use the device (keyboard or SpaceNav 3D mouse) to collect a demonstration.
@@ -94,6 +95,8 @@ def collect_human_trajectory(
             if sample and ep_image_directory is not None:
                 obs = np.flipud(env.sim.render(camera_name="agentview", width=sample_width, height=sample_height))
                 cv2.imwrite(os.path.join(ep_image_directory, f"step_{step_count:04d}_final.png"), obs[..., ::-1])
+                if env._check_success_without_neuraljudge():
+                    saving = True
             break
 
         # Run environment step
@@ -106,10 +109,10 @@ def collect_human_trajectory(
             cv2.imwrite(os.path.join(ep_image_directory, f"step_{step_count:04d}.png"), obs[..., ::-1])
 
         if task_completion_hold_count == 0:
-            # Save final image if sampling
-            if sample and ep_image_directory is not None:
-                obs = np.flipud(env.sim.render(camera_name="agentview", width=sample_width, height=sample_height))
-                cv2.imwrite(os.path.join(ep_image_directory, f"step_{step_count:04d}_final.png"), obs[..., ::-1])
+        #     # Save final image if sampling
+        #     if sample and ep_image_directory is not None:
+        #         obs = np.flipud(env.sim.render(camera_name="agentview", width=sample_width, height=sample_height))
+        #         cv2.imwrite(os.path.join(ep_image_directory, f"step_{step_count:04d}_final.png"), obs[..., ::-1])
             break
 
         # state machine to check for having a success for 10 consecutive timesteps
@@ -121,22 +124,21 @@ def collect_human_trajectory(
         else:
             task_completion_hold_count = -1  # null the counter if there's no success
 
-    # print(count)
-
     if sample:
         success, result = llm_judge.judge_directory(
             image_directory=ep_image_directory,
-            task_description=problem_info["language_instruction"],
-            n_images=1,
+            task_description=neural_task,
+            n_images=n_images,
         )
 
         print("LLM judges the task as: ", "Succeeded" if success else "Failed")
         print("Reason: \n", re.sub(r'(\r?\n){2,}', r'\n', result))
         print("--------------- END OF THINKING ---------------")
 
-        if success:
-            saving = True
-        
+        saving = saving and success
+        # print("symbolic: ", saving)
+        # print("neural: ", success)
+
     # cleanup for end of data collection episodes
     if not saving:
         remove_directory.append(env.ep_directory.split("/")[-1])
@@ -315,10 +317,15 @@ if __name__ == "__main__":
 
     # Check if neural judge is enabled
     parsed_problem_info = BDDLUtils.robosuite_parse_problem(args.bddl_file)
-    sample = False
-    # print(parsed_problem_info["goal_state"])
-    if ["neuraljudge"] in parsed_problem_info["goal_state"]:
-        sample = True
+
+    neural_task = None
+    for item in parsed_problem_info["goal_state"]:
+        if isinstance(item, list) and item and item[0] == "neuraljudge":
+            sample = True
+            neural_task = " ".join(item[1:])
+            break
+    
+    # print(neural_task)
     
     # Check if we're using a multi-armed environment and use env_configuration argument if so
     # Create environment
@@ -415,7 +422,8 @@ if __name__ == "__main__":
         )
         saving = collect_human_trajectory(
             env, device, args.arm, args.config, problem_info, remove_directory, 
-            sample, ep_image_directory, sample_freq=150, sample_width=960, sample_height=512
+            sample, ep_image_directory, neural_task,
+            n_images=10, sample_freq=150, sample_width=960, sample_height=512
         )
         if saving:
             # print(remove_directory)

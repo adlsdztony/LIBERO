@@ -74,13 +74,14 @@ class KitchenScene4(InitialSceneTemplates):
 
 def main():
     scene_name = "kitchen_scene4"
-    language = "In the scene, there is a wine rack, a wine bottle, and a three-drawer cabinet. Open the top drawer, and put the wine bottle in the drawer so that its leaning towards the lefthand side of the camera view"
+    language = "Place the wine bottle on the top of the cabinet. The gripper should grasp the wine bottle by its neck."
     register_task_info(
         language,
         scene_name=scene_name,
-        objects_of_interest=["wine_bottle_1"],
+        objects_of_interest=["wine_bottle_1", "white_cabinet_1"],
         goal_states=[
-            ("NeuralJudge", )
+            ("On", "wine_bottle_1", "white_cabinet_1_top_side"), 
+            ("NeuralJudge", "The gripper should grasp the wine bottle by its neck."),
         ],
     )
 

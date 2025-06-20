@@ -2,6 +2,9 @@ import os
 from typing import List
 from anthropic import AnthropicBedrock
 from openai import OpenAI
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def png_to_base64(png_path: str):
     """Convert a PNG file to a base64-encoded string."""
@@ -141,11 +144,11 @@ class LLMJudge:
         Initialize the LLMJudge.
         """
         self.openai_client = openai_client = OpenAI(
-            api_key="YOUR API KEY HERE",
+            api_key=os.getenv("OPENAI_API_KEY"),
         )
         self.claude_client = AnthropicBedrock(
-            aws_access_key="YOUR ACCESS KEY HERE",
-            aws_secret_key="YOUR SECRET KEY HERE",
+            aws_access_key=os.getenv("AWS_ACCESS_KEY_ID"),
+            aws_secret_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
             aws_region="us-east-1"
         )
         self.provider = provider
@@ -222,13 +225,7 @@ class LLMJudge:
 
         if not system_prompt:
             system_prompt = """
-You are a robotics task evaluator.
-
-Given a image and a task description, determine if the task is completed or not.
-
-Response Format
----------------
-Begin your answer with **Yes** or **No**, followed by a brief statement of the key reason.
+Begin with **Yes** or **No**, followed by a brief statement explaining your judgment.
 """
 
         if self.provider == "openai":

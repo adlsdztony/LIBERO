@@ -244,7 +244,9 @@ If you encounter a "long path" issue on Windows, you can try the following steps
 The following robot components are automatically registered and available for use in predicates:
 
 - `gripper0_finger1` - First gripper finger
-- `gripper0_finger2` - Second gripper finger  
+- `gripper0_finger2` - Second gripper finger
+- `gripper0_finger1_pad` - First gripper finger pad
+- `gripper0_finger2_pad` - Second gripper finger pad
 - `gripper0_hand` - Gripper hand/palm
 
 #### Usage in Predicates
@@ -269,3 +271,58 @@ The robot components are implemented as `RobotObjectState` objects that:
 - Are automatically initialized when the environment is set up
 - Can be accessed through the standard `get_object()` interface
 
+### Constraints
+
+Constraints are wrapper predicates that allow you to specify temporal requirements for predicates during task execution. They monitor whether a predicate condition holds throughout the entire episode, occurs at least once, or never occurs.
+
+#### Available Constraint Types
+
+##### ConstraintAlways
+Ensures that a predicate remains true throughout the entire task execution. The constraint fails if the predicate becomes false at any point during the episode.
+
+**Use Case**: Maintaining object orientation, preventing spills, or ensuring continuous contact.
+
+**Example**:
+```python
+("ConstraintAlways", ("UpRight", "akita_black_bowl_1"))
+```
+This ensures the bowl remains upright throughout the entire task execution.
+
+##### ConstraintOnce
+Requires that a predicate becomes true at least once during the task execution. The constraint is satisfied as soon as the predicate evaluates to true for the first time.
+
+**Use Case**: Ensuring specific interactions occur, like grasping an object or making contact.
+
+**Example**:
+```python
+("ConstraintOnce", ("InContact", "gripper0_finger1", "akita_black_bowl_1"))
+```
+This ensures the gripper finger touches the bowl at least once during the task.
+
+##### ConstraintNever
+Ensures that a predicate never becomes true during the task execution. The constraint fails immediately if the predicate evaluates to true at any point.
+
+**Use Case**: Avoiding collisions, preventing unwanted interactions, or maintaining safety conditions.
+
+**Example**:
+```python
+("ConstraintNever", ("InContact", "akita_black_bowl_1", "plate_1"))
+```
+This ensures the bowl never touches the plate during the entire task.
+
+#### Usage in Task Definition
+
+Constraints can be used in both `goal_states` and as standalone requirements. Here's a comprehensive example:
+
+```python
+goal_states = [
+    # Regular goal predicates
+    ("In", "cube_1", "box_1"),
+    ("Closed", "wooden_cabinet_1_top_region"),
+    
+    # Constraint predicates
+    ("ConstraintAlways", ("UpRight", "akita_black_bowl_1")),
+    ("ConstraintOnce", ("InContact", "gripper0_finger1", "akita_black_bowl_1")),
+    ("ConstraintNever", ("InContact", "akita_black_bowl_1", "plate_1")),
+]
+```
