@@ -22,18 +22,18 @@ def print_states(goal_state, results, object_states_dict, debug_time):
     
     print("Detect time:", debug_time)
     predicate_str_len = 60
-    print("┌" + "─" * predicate_str_len + "┬" + "─" * 10 + "┐")
-    print("│" + " predicate".ljust(predicate_str_len) + "│" + " result".ljust(10) + "│")
-    print("├" + "─" * predicate_str_len + "┼" + "─" * 10 + "┤")
+    print("┌" + "─" * predicate_str_len + "┬" + "─" * 50 + "┐")
+    print("│" + " predicate".ljust(predicate_str_len) + "│" + " result".ljust(50) + "│")
+    print("├" + "─" * predicate_str_len + "┼" + "─" * 50 + "┤")
     
     for i, (state, result) in enumerate(zip(goal_state, results)):
         state_str = str(state)
         if len(state_str) > predicate_str_len:
             state_str = state_str[:predicate_str_len-3] + "..."
         result_str = str(result)
-        print("│" + state_str.ljust(predicate_str_len) +"│ " + result_str.ljust(8) + " │")
+        print("│" + state_str.ljust(predicate_str_len) +"│" + result_str.ljust(50) + "│")
         
-    print("└" + "─" * predicate_str_len + "┴" + "─" * 10 + "┘")
+    print("└" + "─" * predicate_str_len + "┴" + "─" * 50 + "┘")
 
     # print the object states
     object_name_str_len = 30

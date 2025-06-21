@@ -72,6 +72,9 @@ VALIDATE_PREDICATE_FN_DICT.update({
     "constraintalways": ConstraintAlways(),
     "constraintnever": ConstraintNever(),
     "constraintonce": ConstraintOnce(),
+
+    "sequential": Sequential(),
+    "watch": Watch(),
 })
 
 

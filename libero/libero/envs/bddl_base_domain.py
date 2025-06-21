@@ -13,7 +13,7 @@ import robosuite.macros as macros
 import mujoco
 
 import libero.libero.envs.bddl_utils as BDDLUtils
-from libero.libero.envs.predicates.predicate_wrapper import Constraint
+from libero.libero.envs.predicates.predicate_wrapper import Constraint, Sequential, StatefulWrapper
 from libero.libero.envs.robots import *
 from libero.libero.envs.utils import *
 from libero.libero.envs.object_states import *
@@ -940,6 +940,16 @@ class BDDLBaseDomain(SingleArmEnv):
 
         evaluated_args = []
 
+        if isinstance(predicate_fn, Sequential):
+            predicate_str = f"{str(state)}"
+            predicate_fn.init_by_name(predicate_str)
+            expected_index = predicate_fn.state[predicate_str]["NextExpectedIndex"]
+            val = self._eval_predicate(arg_exprs[0][expected_index])
+            evaluated_args = [False] * len(arg_exprs[0])
+            evaluated_args[expected_index] = val
+            return predicate_fn(predicate_str, evaluated_args)
+
+
         # unwrap arguments for variable-length truth predicates, e.g., Any, All, ...
         variable_len_predicate = False
         if len(expected_types) == 1 and expected_types[0] == tuple: 
@@ -961,7 +971,7 @@ class BDDLBaseDomain(SingleArmEnv):
         if variable_len_predicate:
             evaluated_args = (tuple(evaluated_args),)
 
-        if isinstance(predicate_fn, Constraint):
+        if isinstance(predicate_fn, StatefulWrapper):
             predicate_str = f"{str(state)}"
             return predicate_fn(predicate_str, *evaluated_args)
         
