@@ -71,7 +71,6 @@ VALIDATE_PREDICATE_FN_DICT.update({
     "constraintonce": ConstraintOnce(),
 
     "sequential": Sequential(),
-    "relaxedsequential": RelaxedSequential(),
     "watch": Watch(),
 })
 

@@ -103,61 +103,23 @@ class ConstraintOnce(Constraint):
         self.state[name] = arg[0] or self.state[name]
         return self.state[name]
 
-
 class Sequential(StatefulWrapper):
     """
-    A wrapper for predicates that enforces a sequential order of execution.
-    This class is used to ensure that predicates are satisfied in a specific order.
+    A wrapper for predicates that enforces sequential progression without persistence.
+    Only requires that new True values appear in sequential order (starting from arg[0]).
     """
-    def __call__(self, name, *arg):
+    def init_by_name(self, name):
         """
-        Check if the current state is a continuation of the last state.
-
-        Args:
-            name (str): The name of the predicate.
-            arg (tuple): tuple of bool objects representing the current state.
+        Initialize the state for a given predicate name.
+        This method is called when the predicate is first used.
         """
-        arg = arg[0]
-
         if name not in self.state:
             self.state[name] = {
                 "Sequential": True,
-                "LastState": [False] * len(arg),
+                "LastState": [],
                 "NextExpectedIndex": 0
-                }
+            }
 
-        if not self.state[name]["Sequential"]:
-            return BoolResultWrapper(False, f"{arg} Failed")
-        
-        # Sequential means: once a position becomes True, it stays True
-        # and new True values can only appear at the next expected position
-        for i in range(len(arg)):
-            # If a previously True value becomes False, it's not sequential
-            if self.state[name]["LastState"][i] and not arg[i]:
-                self.state[name]["Sequential"] = False
-                return BoolResultWrapper(False, f"{arg} Failed")
-            
-            # If a new True appears, it must be at the next expected sequential position
-            if not self.state[name]["LastState"][i] and arg[i]:
-                if i != self.state[name]["NextExpectedIndex"]:
-                    self.state[name]["Sequential"] = False
-                    return BoolResultWrapper(False, f"{arg} Failed")
-                self.state[name]["NextExpectedIndex"] += 1
-        
-        # Update the last state
-        self.state[name]["LastState"] = list(arg)
-        return BoolResultWrapper(all(arg), f"{arg} Is Sequential")
-
-    def expected_arg_types(self):
-        return [tuple]
-
-
-class RelaxedSequential(StatefulWrapper):
-    """
-    A wrapper for predicates that enforces sequential progression without persistence.
-    Similar to Sequential, but allows previously achieved positions to become False again.
-    Only requires that new True values appear in sequential order (starting from arg[0]).
-    """
     def __call__(self, name, *arg):
         """
         Check if new True values appear in sequential order.
@@ -168,12 +130,9 @@ class RelaxedSequential(StatefulWrapper):
         """
         arg = arg[0]
 
-        if name not in self.state:
-            self.state[name] = {
-                "Sequential": True,
-                "LastState": list(arg),
-                "NextExpectedIndex": 0
-                }
+        self.init_by_name(name)
+        if self.state[name]["LastState"] == []:
+            self.state[name]["LastState"] = [False] * len(arg)
 
         if not self.state[name]["Sequential"]:
             return BoolResultWrapper(False, f"{arg} Failed")
@@ -186,12 +145,14 @@ class RelaxedSequential(StatefulWrapper):
                 if i != self.state[name]["NextExpectedIndex"]:
                     self.state[name]["Sequential"] = False
                     return BoolResultWrapper(False, f"{arg} Failed")
-                self.state[name]["NextExpectedIndex"] += 1
+                if i < len(arg)-1:
+                    self.state[name]["NextExpectedIndex"] += 1
+                
         
         # Update the last state
         self.state[name]["LastState"] = list(arg)
 
-        return BoolResultWrapper(arg[-1], f"{arg} Is Relaxed Sequential")
+        return BoolResultWrapper(arg[-1], f"Is Sequential; Current index: {self.state[name]['NextExpectedIndex']}")
 
     def expected_arg_types(self):
         return [tuple]
