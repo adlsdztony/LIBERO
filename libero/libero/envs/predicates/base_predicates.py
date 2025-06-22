@@ -1758,6 +1758,71 @@ class IsTouchingSideAxis(BinaryAtomic):
 
     def expected_arg_types(self):
         return [BaseObjectState, BaseObjectState, str, float]
+
+
+class AxisAlignedWithinObjectAxis(BinaryAtomic):
+    """
+    Check if the angle between two specified axes of two objects is within a given range.
+    
+    Usage: AxisAlignedWithinObjectAxis()(obj1, obj2, axis1, axis2, min_deg, max_deg)
+    Arguments:
+    - obj1: The first object.
+    - obj2: The second object.
+    - axis1: A string indicating the axis ('x', 'y', or 'z') of the first object.
+    - axis2: A string indicating the axis ('x', 'y', or 'z') of the second object.
+    - min_deg: Minimum angle in degrees for the axes to be considered aligned.
+    - max_deg: Maximum angle in degrees for the axes to be considered aligned.
+    
+    Returns:
+    - True if the angle between the specified axes is within the range [min_deg, max_deg].
+    - False otherwise.
+    
+    Raises:
+    - ValueError: If the axes are not one of 'x', 'y', or 'z', or if the degree range is invalid.
+    """
+    def __call__(self, obj1, obj2, axis1, axis2, min_deg, max_deg):
+        if axis1 not in {"x", "y", "z"}:
+            raise ValueError("axis1 must be one of 'x', 'y', or 'z'")
+        if axis2 not in {"x", "y", "z"}:
+            raise ValueError("axis2 must be one of 'x', 'y', or 'z'")
+        if not (0 <= min_deg <= max_deg <= 180):
+            raise ValueError("Degrees must satisfy 0 <= min_deg <= max_deg <= 180")
+
+        min_rad = np.radians(min_deg)
+        max_rad = np.radians(max_deg)
+        cos_min = np.cos(min_rad)
+        cos_max = np.cos(max_rad)
+
+        # Get the quaternion for the first object
+        geom1 = obj1.get_geom_state()
+        w1, x1, y1, z1 = geom1["quat"]
+        quat1 = np.array([x1, y1, z1, w1])
+        R1 = transform_utils.quat2mat(quat1)
+
+        # Get the quaternion for the second object
+        geom2 = obj2.get_geom_state()
+        w2, x2, y2, z2 = geom2["quat"]
+        quat2 = np.array([x2, y2, z2, w2])
+        R2 = transform_utils.quat2mat(quat2)
+
+        # Get the specified axis of each object in world coordinates
+        axis_index1 = {"x": 0, "y": 1, "z": 2}[axis1]
+        axis_index2 = {"x": 0, "y": 1, "z": 2}[axis2]
+        object1_axis = R1[:, axis_index1]
+        object2_axis = R2[:, axis_index2]
+
+        # Calculate the cosine of the angle between the two axes
+        cos_angle = np.dot(object1_axis, object2_axis)
+        # Clamp to [-1, 1] to avoid numerical issues
+        cos_angle = np.clip(cos_angle, -1.0, 1.0)
+        
+        # Check if the angle is within the specified range
+        # Note: cosine is decreasing as the angle increases from 0 to 180 degrees
+        return cos_max <= cos_angle <= cos_min
+
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState, str, str, float, float]
+    
 class YawAngleAligned(BinaryAtomic):
     """
     Check if the yaw (rotation around z-axis) of two objects are aligned within a specified threshold (in degrees),
