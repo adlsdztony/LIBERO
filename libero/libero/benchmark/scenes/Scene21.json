@@ -1,0 +1,150 @@
+{
+    "name": "Scene21",
+    "fixture_num_info": {
+        "table": 1,
+        "wooden_cabinet": 1,
+        "flat_stove": 1,
+        "wine_rack": 1
+    },
+    "object_num_info": {
+        "akita_black_bowl": 1,
+        "cream_cheese": 1,
+        "wine_bottle": 1,
+        "plate": 1
+    },
+    "regions": [
+        {
+            "region_centroid_xy": [
+                0.05,
+                -0.02
+            ],
+            "region_name": "plate_region",
+            "region_half_len": 0.01,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                -0.09,
+                0.0
+            ],
+            "region_name": "akita_black_bowl_region",
+            "region_half_len": 0.01,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                -0.2,
+                -0.05
+            ],
+            "region_name": "wine_bottle_region",
+            "region_half_len": 0.01,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                -0.05,
+                0.13
+            ],
+            "region_name": "cream_cheese_region",
+            "region_half_len": 0.01,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                -0.05,
+                0.21
+            ],
+            "region_name": "stove_front_region",
+            "region_half_len": 0.04,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                0.03,
+                -0.24
+            ],
+            "region_name": "cabinet_region",
+            "region_half_len": 0.01,
+            "yaw_rotation": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                -0.41,
+                0.21
+            ],
+            "region_name": "stove_region",
+            "region_half_len": 0.01,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                -0.26,
+                -0.26
+            ],
+            "region_name": "wine_rack_region",
+            "region_half_len": 0.01,
+            "yaw_rotation": [
+                1.0,
+                1.0
+            ]
+        }
+    ],
+    "init_states": [
+        [
+            "On",
+            "wine_bottle_1",
+            "{scene_table}_wine_bottle_region"
+        ],
+        [
+            "On",
+            "akita_black_bowl_1",
+            "{scene_table}_akita_black_bowl_region"
+        ],
+        [
+            "On",
+            "plate_1",
+            "{scene_table}_plate_region"
+        ],
+        [
+            "On",
+            "cream_cheese_1",
+            "{scene_table}_cream_cheese_region"
+        ],
+        [
+            "On",
+            "wooden_cabinet_1",
+            "{scene_table}_cabinet_region"
+        ],
+        [
+            "On",
+            "flat_stove_1",
+            "{scene_table}_stove_region"
+        ],
+        [
+            "On",
+            "wine_rack_1",
+            "{scene_table}_wine_rack_region"
+        ]
+    ]
+}

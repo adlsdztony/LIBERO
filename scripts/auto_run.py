@@ -34,7 +34,8 @@ def run_python_script(path):
                     sys.executable, collect_script_path,
                     '--bddl-file', generated_path,
                     '--device', 'keyboard',
-                    '--robots', 'Panda'
+                    '--robots', 'Panda',
+                    # '--camera', 'galleryview',
                 ])
             else:
                 print("No valid path found in the output.")

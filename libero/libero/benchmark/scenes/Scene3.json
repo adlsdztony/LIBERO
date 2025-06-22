@@ -1,0 +1,66 @@
+{
+    "name": "Scene3",
+    "fixture_num_info": {
+        "{scene_table}": 1,
+        "flat_stove": 1
+    },
+    "object_num_info": {
+        "chefmate_8_frypan": 1,
+        "moka_pot": 1
+    },
+    "regions": [
+        {
+            "region_centroid_xy": [
+                -0.2,
+                0.2
+            ],
+            "region_name": "flat_stove_init_region",
+            "region_half_len": 0.01,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                -0.05,
+                -0.25
+            ],
+            "region_name": "frypan_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                0.05,
+                0.0
+            ],
+            "region_name": "moka_pot_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        }
+    ],
+    "init_states": [
+        [
+            "On",
+            "flat_stove_1",
+            "{scene_table}_flat_stove_init_region"
+        ],
+        [
+            "On",
+            "chefmate_8_frypan_1",
+            "{scene_table}_frypan_init_region"
+        ],
+        [
+            "On",
+            "moka_pot_1",
+            "{scene_table}_moka_pot_init_region"
+        ]
+    ]
+}

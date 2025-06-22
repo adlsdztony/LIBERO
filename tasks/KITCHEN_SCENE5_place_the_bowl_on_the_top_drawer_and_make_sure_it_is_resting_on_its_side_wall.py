@@ -17,7 +17,7 @@ def main():
     register_task_info(
         language,
         scene_name=scene_name,
-        objects_of_interest=["akita_black_bowl_1"],
+        objects_of_interest=["akita_black_bowl_1", "white_cabinet_1"],
         goal_states=[
             ("In", "akita_black_bowl_1", "white_cabinet_1_top_region"),
             ("AxisAlignedWithin", "akita_black_bowl_1", "z", 40, 90),

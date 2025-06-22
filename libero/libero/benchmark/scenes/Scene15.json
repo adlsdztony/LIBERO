@@ -1,0 +1,101 @@
+{
+    "name": "Scene15",
+    "fixture_num_info": {
+        "{scene_table}": 1
+    },
+    "object_num_info": {
+        "porcelain_mug": 1,
+        "red_coffee_mug": 1,
+        "white_yellow_mug": 1,
+        "plate": 2
+    },
+    "regions": [
+        {
+            "region_centroid_xy": [
+                0.0,
+                -0.3
+            ],
+            "region_name": "plate_left_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                0.0,
+                0.3
+            ],
+            "region_name": "plate_right_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                -0.1,
+                -0.15
+            ],
+            "region_name": "porcelain_mug_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                -0.05,
+                0.1
+            ],
+            "region_name": "white_yellow_mug_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                -0.2,
+                0.0
+            ],
+            "region_name": "red_coffee_mug_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        }
+    ],
+    "init_states": [
+        [
+            "On",
+            "plate_1",
+            "{scene_table}_plate_left_region"
+        ],
+        [
+            "On",
+            "plate_2",
+            "{scene_table}_plate_right_region"
+        ],
+        [
+            "On",
+            "red_coffee_mug_1",
+            "{scene_table}_red_coffee_mug_init_region"
+        ],
+        [
+            "On",
+            "white_yellow_mug_1",
+            "{scene_table}_white_yellow_mug_init_region"
+        ],
+        [
+            "On",
+            "porcelain_mug_1",
+            "{scene_table}_porcelain_mug_init_region"
+        ]
+    ]
+}

@@ -26,6 +26,7 @@ def main():
             ("Under", "red_coffee_mug_1", "black_book_1"),
             ("InContact", "porcelain_mug_1", "black_book_1"),
             ("InContact", "red_coffee_mug_1", "black_book_1"),
+            ("Linear", "porcelain_mug_1", "red_coffee_mug_1", "black_book_1", 0.001),
         ],
     )
 

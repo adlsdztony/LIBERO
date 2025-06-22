@@ -1,0 +1,82 @@
+{
+    "name": "Scene6",
+    "fixture_num_info": {
+        "{scene_table}": 1,
+        "microwave": 1
+    },
+    "object_num_info": {
+        "porcelain_mug": 1,
+        "white_yellow_mug": 1
+    },
+    "regions": [
+        {
+            "region_centroid_xy": [
+                0.0,
+                0.35
+            ],
+            "region_name": "microwave_init_region",
+            "region_half_len": 0.01,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                0.0,
+                0.0
+            ],
+            "region_name": "white_yellow_mug_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                -0.1,
+                -0.25
+            ],
+            "region_name": "porcelain_mug_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                0.0,
+                -0.25
+            ],
+            "region_name": "porcelain_mug_front_region",
+            "region_half_len": 0.05,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        }
+    ],
+    "init_states": [
+        [
+            "On",
+            "porcelain_mug_1",
+            "{scene_table}_porcelain_mug_init_region"
+        ],
+        [
+            "On",
+            "white_yellow_mug_1",
+            "{scene_table}_white_yellow_mug_init_region"
+        ],
+        [
+            "On",
+            "microwave_1",
+            "{scene_table}_microwave_init_region"
+        ],
+        [
+            "Open",
+            "microwave_1"
+        ]
+    ]
+}

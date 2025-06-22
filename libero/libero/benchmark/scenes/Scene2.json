@@ -1,0 +1,100 @@
+{
+    "name": "Scene2",
+    "fixture_num_info": {
+        "{scene_table}": 1,
+        "wooden_cabinet": 1
+    },
+    "object_num_info": {
+        "akita_black_bowl": 3,
+        "plate": 1
+    },
+    "regions": [
+        {
+            "region_centroid_xy": [
+                0.0,
+                -0.3
+            ],
+            "region_name": "wooden_cabinet_init_region",
+            "region_half_len": 0.01,
+            "yaw_rotation": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                -0.05,
+                0.2
+            ],
+            "region_name": "akita_black_bowl_middle_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                0.1,
+                0.15
+            ],
+            "region_name": "akita_black_bowl_front_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                -0.15,
+                0.05
+            ],
+            "region_name": "akita_black_bowl_back_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                0.0,
+                0.0
+            ],
+            "region_name": "plate_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        }
+    ],
+    "init_states": [
+        [
+            "On",
+            "akita_black_bowl_1",
+            "{scene_table}_akita_black_bowl_front_init_region"
+        ],
+        [
+            "On",
+            "akita_black_bowl_2",
+            "{scene_table}_akita_black_bowl_middle_init_region"
+        ],
+        [
+            "On",
+            "akita_black_bowl_3",
+            "{scene_table}_akita_black_bowl_back_init_region"
+        ],
+        [
+            "On",
+            "plate_1",
+            "{scene_table}_plate_init_region"
+        ],
+        [
+            "On",
+            "wooden_cabinet_1",
+            "{scene_table}_wooden_cabinet_init_region"
+        ]
+    ]
+}

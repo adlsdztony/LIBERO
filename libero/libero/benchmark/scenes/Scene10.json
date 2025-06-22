@@ -1,0 +1,105 @@
+{
+    "name": "Scene10",
+    "fixture_num_info": {
+        "{scene_table}": 1,
+        "wooden_cabinet": 1
+    },
+    "object_num_info": {
+        "akita_black_bowl": 1,
+        "butter": 2,
+        "chocolate_pudding": 1
+    },
+    "regions": [
+        {
+            "region_centroid_xy": [
+                0.0,
+                -0.3
+            ],
+            "region_name": "wooden_cabinet_init_region",
+            "region_half_len": 0.01,
+            "yaw_rotation": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                -0.1,
+                0.0
+            ],
+            "region_name": "akita_black_bowl_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                -0.1,
+                0.2
+            ],
+            "region_name": "butter_back_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                0.0,
+                0.2
+            ],
+            "region_name": "butter_front_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                0.0,
+                0.05
+            ],
+            "region_name": "chocolate_pudding_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        }
+    ],
+    "init_states": [
+        [
+            "On",
+            "akita_black_bowl_1",
+            "{scene_table}_akita_black_bowl_init_region"
+        ],
+        [
+            "On",
+            "butter_1",
+            "{scene_table}_butter_front_init_region"
+        ],
+        [
+            "On",
+            "butter_2",
+            "{scene_table}_butter_back_init_region"
+        ],
+        [
+            "On",
+            "chocolate_pudding_1",
+            "{scene_table}_chocolate_pudding_init_region"
+        ],
+        [
+            "On",
+            "wooden_cabinet_1",
+            "{scene_table}_wooden_cabinet_init_region"
+        ],
+        [
+            "Open",
+            "wooden_cabinet_1_top_region"
+        ]
+    ]
+}

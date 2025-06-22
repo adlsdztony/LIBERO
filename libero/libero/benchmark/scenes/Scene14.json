@@ -1,0 +1,101 @@
+{
+    "name": "Scene14",
+    "fixture_num_info": {
+        "{scene_table}": 1
+    },
+    "object_num_info": {
+        "akita_black_bowl": 2,
+        "new_salad_dressing": 1,
+        "chocolate_pudding": 1,
+        "wooden_tray": 1
+    },
+    "regions": [
+        {
+            "region_centroid_xy": [
+                0.0,
+                0.26
+            ],
+            "region_name": "wooden_tray_init_region",
+            "region_half_len": 0.01,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                0.1,
+                -0.2
+            ],
+            "region_name": "chocolate_pudding_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                -0.1,
+                0.05
+            ],
+            "region_name": "akita_black_bowl_right_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                -0.1,
+                -0.15
+            ],
+            "region_name": "akita_black_bowl_left_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                -0.25,
+                -0.1
+            ],
+            "region_name": "salad_dressing_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        }
+    ],
+    "init_states": [
+        [
+            "On",
+            "chocolate_pudding_1",
+            "{scene_table}_chocolate_pudding_init_region"
+        ],
+        [
+            "On",
+            "akita_black_bowl_1",
+            "{scene_table}_akita_black_bowl_left_init_region"
+        ],
+        [
+            "On",
+            "akita_black_bowl_2",
+            "{scene_table}_akita_black_bowl_right_init_region"
+        ],
+        [
+            "On",
+            "new_salad_dressing_1",
+            "{scene_table}_salad_dressing_init_region"
+        ],
+        [
+            "On",
+            "wooden_tray_1",
+            "{scene_table}_wooden_tray_init_region"
+        ]
+    ]
+}

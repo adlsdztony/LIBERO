@@ -1,0 +1,70 @@
+{
+    "name": "Scene7",
+    "fixture_num_info": {
+        "{scene_table}": 1,
+        "microwave": 1
+    },
+    "object_num_info": {
+        "white_bowl": 1,
+        "plate": 1
+    },
+    "regions": [
+        {
+            "region_centroid_xy": [
+                0.0,
+                -0.25
+            ],
+            "region_name": "microwave_init_region",
+            "region_half_len": 0.01,
+            "yaw_rotation": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                0.0,
+                0.0
+            ],
+            "region_name": "plate_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                0.0,
+                0.1
+            ],
+            "region_name": "plate_right_region",
+            "region_half_len": 0.05,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        }
+    ],
+    "init_states": [
+        [
+            "On",
+            "white_bowl_1",
+            "microwave_1_top_side"
+        ],
+        [
+            "On",
+            "microwave_1",
+            "{scene_table}_microwave_init_region"
+        ],
+        [
+            "Close",
+            "microwave_1"
+        ],
+        [
+            "On",
+            "plate_1",
+            "{scene_table}_plate_init_region"
+        ]
+    ]
+}

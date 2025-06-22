@@ -1,0 +1,120 @@
+{
+    "name": "Scene13",
+    "fixture_num_info": {
+        "{scene_table}": 1
+    },
+    "object_num_info": {
+        "alphabet_soup": 1,
+        "cream_cheese": 1,
+        "tomato_sauce": 1,
+        "ketchup": 1,
+        "butter": 1,
+        "wooden_tray": 1
+    },
+    "regions": [
+        {
+            "region_centroid_xy": [
+                0.0,
+                0.26
+            ],
+            "region_name": "wooden_tray_init_region",
+            "region_half_len": 0.01,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                0.1,
+                -0.2
+            ],
+            "region_name": "cream_cheese_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                -0.1,
+                0.05
+            ],
+            "region_name": "tomato_sauce_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                -0.1,
+                -0.15
+            ],
+            "region_name": "alphabet_soup_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                0.05,
+                0.05
+            ],
+            "region_name": "butter_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                -0.25,
+                -0.15
+            ],
+            "region_name": "ketchup_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        }
+    ],
+    "init_states": [
+        [
+            "On",
+            "alphabet_soup_1",
+            "{scene_table}_alphabet_soup_init_region"
+        ],
+        [
+            "On",
+            "cream_cheese_1",
+            "{scene_table}_cream_cheese_init_region"
+        ],
+        [
+            "On",
+            "tomato_sauce_1",
+            "{scene_table}_tomato_sauce_init_region"
+        ],
+        [
+            "On",
+            "ketchup_1",
+            "{scene_table}_ketchup_init_region"
+        ],
+        [
+            "On",
+            "butter_1",
+            "{scene_table}_butter_init_region"
+        ],
+        [
+            "On",
+            "wooden_tray_1",
+            "{scene_table}_wooden_tray_init_region"
+        ]
+    ]
+}

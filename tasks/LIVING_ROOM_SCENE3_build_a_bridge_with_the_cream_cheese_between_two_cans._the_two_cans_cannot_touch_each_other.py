@@ -25,6 +25,7 @@ def main():
             ("RelaxedOn", "cream_cheese_1", "alphabet_soup_1"),
             ("RelaxedOn", "cream_cheese_1", "tomato_sauce_1"),
             ("Not", ("InContact", "alphabet_soup_1", "tomato_sauce_1")),
+            ("Linear", "alphabet_soup_1", "tomato_sauce_1", "cream_cheese_1", 0.001),
         ]
     )
 

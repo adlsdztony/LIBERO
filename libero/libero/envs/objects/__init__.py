@@ -7,6 +7,7 @@ from .google_scanned_objects import *
 from .articulated_objects import *
 from .turbosquid_objects import *
 from .site_object import SiteObject
+from .robosuite_objects import *
 from .target_zones import *
 
 

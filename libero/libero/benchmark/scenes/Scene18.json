@@ -1,0 +1,66 @@
+{
+    "name": "Scene18",
+    "fixture_num_info": {
+        "{scene_table}": 1,
+        "desk_caddy": 1
+    },
+    "object_num_info": {
+        "black_book": 1,
+        "red_coffee_mug": 1
+    },
+    "regions": [
+        {
+            "region_centroid_xy": [
+                0.0,
+                0.15
+            ],
+            "region_name": "red_coffee_mug_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                0.0,
+                -0.05
+            ],
+            "region_name": "black_book_init_region",
+            "region_half_len": 0.025,
+            "yaw_rotation": [
+                -1.0,
+                -1.0
+            ]
+        },
+        {
+            "region_centroid_xy": [
+                -0.2,
+                -0.14
+            ],
+            "region_name": "desk_caddy_init_region",
+            "region_half_len": 0.01,
+            "yaw_rotation": [
+                1.0,
+                1.0
+            ]
+        }
+    ],
+    "init_states": [
+        [
+            "On",
+            "desk_caddy_1",
+            "{scene_table}_desk_caddy_init_region"
+        ],
+        [
+            "On",
+            "black_book_1",
+            "{scene_table}_black_book_init_region"
+        ],
+        [
+            "On",
+            "red_coffee_mug_1",
+            "{scene_table}_red_coffee_mug_init_region"
+        ]
+    ]
+}

@@ -25,7 +25,7 @@ def main():
     register_task_info(
         language,
         scene_name=scene_name,
-        objects_of_interest=["wooden_cabinet_1", "akita_black_bowl_1"],
+        objects_of_interest=["akita_black_bowl_1"],
         goal_states=[
             ("PositionWithin", "akita_black_bowl_1", bottom_right_corner[0], bottom_right_corner[1], bottom_right_corner[2], 0.05, 0.05, 0.01),
         ]

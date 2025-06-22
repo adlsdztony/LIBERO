@@ -55,6 +55,9 @@ class ObjectState(BaseObjectState):
         return {"pos": object_pos, "quat": object_quat}
 
     def check_contact(self, other):
+        if isinstance(other, RobotObjectState):
+            # If the other object is a robot component, use its check_contact method
+            return other.check_contact(self)
         object_1 = self.env.get_object(self.object_name)
         object_2 = self.env.get_object(other.object_name)
         return self.env.check_contact(object_1, object_2)
@@ -237,3 +240,70 @@ class SiteObjectState(BaseObjectState):
             qpos = self.env.sim.data.qpos[qpos_addr]
             ratios.append(self.env.get_object(self.object_name).open_ratio(qpos))
         return sum(ratios)/len(ratios)
+
+
+class RobotObjectState(BaseObjectState):
+    """
+    Object state class for robot components (gripper fingers, hand, etc.)
+    """
+    def __init__(self, env, geom_name):
+        self.env = env
+        self.geom_name = geom_name
+        self.object_state_type = "robot"
+        self.last_contact = None
+        
+    def get_geom_state(self):
+        """Get the geometric state of the robot component"""
+        # Get the geom id from the name
+        geom_id = self.env.sim.model.geom_name2id(self.geom_name)
+        
+        # Get the body id that this geom belongs to
+        body_id = self.env.sim.model.geom_bodyid[geom_id]
+        
+        # Get position and orientation from the body
+        object_pos = self.env.sim.data.body_xpos[body_id]
+        object_quat = self.env.sim.data.body_xquat[body_id]
+        
+        return {"pos": object_pos, "quat": object_quat}
+    
+    def check_contact(self, other):
+        """Check if this robot component is in contact with another object"""
+        # Get the geom id for this robot component
+        geom_id = self.env.sim.model.geom_name2id(self.geom_name)
+        
+        # Get the other object's geom ids
+        if hasattr(other, 'geom_name'):
+            # If it's another robot component
+            other_geom_id = self.env.sim.model.geom_name2id(other.geom_name)
+            other_geom_ids = [other_geom_id]
+        else:
+            # If it's a regular object, get all its geom ids
+            other_object = self.env.get_object(other.object_name)
+            if other_object is None:
+                return False
+            other_geom_ids = []
+            for geom_name in other_object.contact_geoms:
+                try:
+                    other_geom_ids.append(self.env.sim.model.geom_name2id(geom_name))
+                except:
+                    continue
+        
+        # if self.last_contact is not None and self.env.sim.data.ncon == self.last_contact:
+        #     return False
+        # self.last_contact = self.env.sim.data.ncon
+        # print()
+        # Check contacts in the simulation
+        for i in range(self.env.sim.data.ncon):
+            contact = self.env.sim.data.contact[i]
+            geom1_id = contact.geom1
+            geom2_id = contact.geom2
+
+            # geom1_name = self.env.sim.model.geom_id2name(geom1_id)
+            # geom2_name = self.env.sim.model.geom_id2name(geom2_id)
+            # if geom1_name and geom2_name:
+            #     print(f"Contact geom names: {geom1_name}, {geom2_name}")
+            
+            if (geom_id == geom1_id and geom2_id in other_geom_ids) or \
+               (geom_id == geom2_id and geom1_id in other_geom_ids):
+                return True
+        return False

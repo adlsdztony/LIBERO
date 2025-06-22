@@ -1,5 +1,6 @@
 *~
 .hydra
+.env
 *pyc
 datasets
 results
@@ -18,6 +19,7 @@ libero.egg-info/
 .vscode/
 
 demonstration_data/
+prompts/
 
 # macOS specific
 .DS_Store
