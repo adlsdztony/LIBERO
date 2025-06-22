@@ -109,6 +109,17 @@ def collect_human_trajectory(
         obs, _, _, _ = env.step(action)
         if count % 100 == 0:
             print_ee_pose(obs)
+            def get_robot_base_transform(env):
+                """Get robot base pose in world coordinates"""
+                robot = env.robots[0] 
+                base_name = robot.robot_model.root_body
+                base_body_id = env.sim.model.body_name2id(base_name)
+                
+                world_to_base_pos = env.sim.data.body_xpos[base_body_id]
+                world_to_base_quat = env.sim.data.body_xquat[base_body_id]
+                
+                return world_to_base_pos, world_to_base_quat
+            print("Robot base pose: ", get_robot_base_transform(env))
         env.render()
 
         # sample image at given frequency
