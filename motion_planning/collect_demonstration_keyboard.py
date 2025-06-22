@@ -107,8 +107,12 @@ def collect_human_trajectory(
 
         # Run environment step
         obs, _, _, _ = env.step(action)
+        if count % 30 == 0:
+            # Print joint positions in numpy array format for easy copy-paste
+            joint_pos = obs["robot0_joint_pos"]
+            print("np.array([{}]),".format(", ".join(f"{x:.7f}" for x in joint_pos)))
         if count % 100 == 0:
-            print_ee_pose(obs)
+            # print_ee_pose(obs)
             def get_robot_base_transform(env):
                 """Get robot base pose in world coordinates"""
                 robot = env.robots[0] 
@@ -119,7 +123,7 @@ def collect_human_trajectory(
                 world_to_base_quat = env.sim.data.body_xquat[base_body_id]
                 
                 return world_to_base_pos, world_to_base_quat
-            print("Robot base pose: ", get_robot_base_transform(env))
+            # print("Robot base pose: ", get_robot_base_transform(env))
         env.render()
 
         # sample image at given frequency

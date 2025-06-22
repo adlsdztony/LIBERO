@@ -25,10 +25,10 @@ from libero_adapter import LiberoMPLibAdapter, create_libero_planner
 
 
 def collect_scripted_trajectory(
-    env, planner, target_poses, gripper, remove_directory=[]
+    env, planner, target_joint_positions, target_grippers, remove_directory=[]
 ):
     """
-    Simple motion planning demonstration collection.
+    Simple joint position tracking demonstration collection.
     """
 
     reset_success = False
@@ -44,9 +44,9 @@ def collect_scripted_trajectory(
     task_completion_hold_count = -1
     saving = True
     count = 0
-    pose_index = 0
+    joint_index = 0
 
-    print(f"Starting scripted trajectory with {len(target_poses)} target poses")
+    print(f"Starting joint position tracking with {len(target_joint_positions)} target joint positions")
 
     # Run multiple empty actions to ensure the arm is stable
     empty_action = np.zeros(8)
@@ -57,55 +57,71 @@ def collect_scripted_trajectory(
         current_gripper = planner.get_gripper_joint_positions(obs)
         env.render()
 
-    while pose_index < len(target_poses):
+    while joint_index < len(target_joint_positions):
         # Get current joint positions from observation
         current_joints = planner.get_current_joint_positions(obs)
         current_gripper = planner.get_gripper_joint_positions(obs)
 
-        # Get target pose
-        pos, quat = target_poses[pose_index]
-        print(f"Index {pose_index + 1}/{len(target_poses)}: Planning to {pos} {quat}")
+        # Get target joint positions
+        target_joints = target_joint_positions[joint_index]
+        target_gripper = target_grippers[joint_index]
 
-        # Plan trajectory to target pose using RRTConnect
-        # result = planner.plan_to_pose(pos, quat, current_joints, use_screw=True)
-        result = planner.plan_to_pose(pos, quat, np.concatenate((current_joints, current_gripper)), use_screw=False)
+        print(f"Index {joint_index + 1}/{len(target_joint_positions)}: Planning to joint positions and gripper {target_joints} {target_gripper}")
+
+        # Plan trajectory to target joint position using motion planner
+        result = planner.planner.plan_qpos(
+            goal_qposes=[target_joints], 
+            current_qpos=np.concatenate((current_joints, current_gripper)),
+            time_step=0.1,
+            rrt_range=0.1,
+            planning_time=5.0,
+            fix_joint_limits=True,
+            verbose=False
+        )
         if result["status"] != "Success":
-            print("RRT planning also failed, skipping this pose")
-            pose_index += 1
+            print(f"Motion planning failed: {result['status']}, skipping this joint position")
+            joint_index += 1
             continue
 
-        # Append several duplicate steps to hold the pose
-        duplicate_steps = 50
-        last_step = result["position"][-1]
-        result["position"] = np.concatenate(
-            [result["position"], np.tile(last_step, (duplicate_steps, 1))], axis=0
-        )
-        # Execute the planned trajectory
-        n_steps = result["position"].shape[0]
-        # print(f"Executing trajectory with {n_steps} steps")
 
-        for i in range(n_steps):
+        # Add several duplicate steps to hold the final position
+        duplicate_steps = 20
+        if len(result["position"]) == 0:
+            result["position"] = np.array([target_joints] * (duplicate_steps))
+        else:
+            last_step = result["position"][-1]
+            result["position"] = np.concatenate(
+                [result["position"], np.tile(last_step, (duplicate_steps, 1))], axis=0
+            )
+        
+        # Execute the planned joint trajectory
+        total_steps = result["position"].shape[0]
+        print(f"Executing planned joint trajectory with {total_steps} steps")
+
+        for i in range(total_steps):
             count += 1
 
-            # JOINT POSITION
+            # Get planned joint positions for this step
             planned_joints = result["position"][i]
             current_joints = planner.get_current_joint_positions(obs)
             joint_error = planned_joints - current_joints
             # print(f"Joint error: {joint_error}")
 
-            action = np.zeros(8)
-            action[:7] = planned_joints - current_joints
-            action[7] = gripper[pose_index]  # Set gripper action
-            # print(f"Action to take: {[f'{a:.3f}' for a in action]}")
+            step = 3
             
-            # Step the environment
-            obs, reward, done, info = env.step(action)
-            if count % 30 == 0:
-                ee_pos = obs["robot0_eef_pos"]
-                ee_quat = obs["robot0_eef_quat"]
-                # print("[{:.3f}, {:.3f}, {:.3f}]".format(*ee_pos), "[{:.3f}, {:.3f}, {:.3f}, {:.3f}]".format(*ee_quat))
-                # print(obs)
-            env.render()
+            for j in range(step):
+                action = np.zeros(8)
+                action[:7] = joint_error  # Joint position control
+                action[7] = target_gripper  # Set gripper action
+                # print(f"Action to take: {[f'{a:.3f}' for a in action]}")
+                
+                # Step the environment
+                obs, reward, done, info = env.step(action)
+                if count % 30 == 0:
+                    current_joints_display = planner.get_current_joint_positions(obs)
+                    # print(f"Current joints: {[f'{j:.3f}' for j in current_joints_display]}")
+                    # print(f"Planned joints: {[f'{j:.3f}' for j in planned_joints]}")
+                env.render()
 
             # Check for task completion
             if task_completion_hold_count == 0:
@@ -123,14 +139,15 @@ def collect_scripted_trajectory(
                 task_completion_hold_count = -1
 
             time.sleep(0.01)
-        ee_pos_error = pos - ee_pos
-        print(ee_pos_error)
-        ee_pos = obs["robot0_eef_pos"]
-        ee_quat = obs["robot0_eef_quat"]
-        print("Libero Current EE Pose [{:.3f}, {:.3f}, {:.3f}]".format(*ee_pos), "[{:.3f}, {:.3f}, {:.3f}, {:.3f}]\n".format(*ee_quat))
+        
+        # Calculate final joint error
+        final_joints = planner.get_current_joint_positions(obs)
+        joint_error_final = target_joints - final_joints
+        print(f"Final joint error: {[f'{e:.3f}' for e in joint_error_final]}")
+        print(f"Final joint positions: {[f'{j:.3f}' for j in final_joints]}\n")
 
-        # Move to next pose
-        pose_index += 1
+        # Move to next joint target
+        joint_index += 1
         
         # If task completed, break
         if task_completion_hold_count == 0:
@@ -146,29 +163,36 @@ def collect_scripted_trajectory(
     return saving
 
 
-def get_scripted_poses_for_task(problem_name, language_instruction):
-    poses = [
-        # [[0.038, 0.048, 1.049], [1.000, 0.000, -0.028, 0.000]],
-        # [[0.036, 0.051, 0.934], [1.000, 0.000, -0.028, -0.000]],
-        # [[0.036, 0.051, 0.934], [1.000, 0.000, -0.028, -0.000]],
-        # [[0.042, 0.048, 1.080], [1.000, 0.000, -0.029, 0.000]]
+def get_scripted_joint_positions_for_task(problem_name, language_instruction):
+    """
+    Define target joint positions for different tasks.
+    Each joint position should be a 7-element array for the 7 DOF Panda arm.
+    Joint limits (approximate):
+    - Joint 1: [-2.9, 2.9] rad
+    - Joint 2: [-1.8, 1.8] rad  
+    - Joint 3: [-2.9, 2.9] rad
+    - Joint 4: [-3.1, 0.0] rad
+    - Joint 5: [-2.9, 2.9] rad
+    - Joint 6: [-0.0, 3.8] rad
+    - Joint 7: [-2.9, 2.9] rad
+    """
+    
+    # Example joint positions - you should modify these based on your specific task
+    joint_positions = [
+        np.array([0.1079018, 0.8464436, 0.0209961, -1.6045612, -0.2262161, 2.3636613, 1.0807042]),
+        np.array([0.1079018, 0.8464436, 0.0209961, -1.6045612, -0.2262161, 2.3636613, 1.0807042]),
 
-        [[0.0219382, 0.0780828, 1.0067487], [0.9995958, 0.0002424, -0.0284270, -0.0000250]],
-        [[0.0240333, 0.0813473, 0.9187534], [0.9995953, 0.0001911, -0.0284460, 0.0001350]],
-        [[0.0240333, 0.0813473, 0.9187534], [0.9995953, 0.0001911, -0.0284460, 0.0001350]],
-        [[0.0414913, 0.2660626, 0.9825765], [0.9995826, 0.0002256, -0.0288904, -0.0000298]],
-        [[0.0414913, 0.2660626, 0.9825765], [0.9995826, 0.0002256, -0.0288904, -0.0000298]],
-    ]
-    gripper = [
-        -1,
-        0,
-        1,
-        1,
-        -1,
-    ]
+        np.array([0.3185039, 0.9802151, 0.1630616, -1.2502969, -0.2878828, 2.0901459, 1.3674673]),
+        np.array([0.3185039, 0.9802151, 0.1630616, -1.2502969, -0.2878828, 2.0901459, 1.3674673]),
 
-    print(f"Using {len(poses)} scripted poses for task: {language_instruction}")
-    return poses, gripper
+    ]
+    
+    # Gripper states corresponding to each joint position
+    # -1: open, 1: closed
+    gripper = [-1, 1, 1, -1]
+
+    print(f"Using {len(joint_positions)} target joint positions for task: {language_instruction}")
+    return joint_positions, gripper
 
 
 def gather_demonstrations_as_hdf5(
@@ -297,7 +321,7 @@ if __name__ == "__main__":
 
     # Get controller config
     controller_config = load_controller_config(default_controller="JOINT_POSITION")
-    controller_config["kp"] = 150.0
+    controller_config["kp"] = 300.0
     controller_config["damping_ratio"] = 0.8
     controller_config["output_max"] = 0.5
     controller_config["output_min"] = -0.5
@@ -358,8 +382,8 @@ if __name__ == "__main__":
     KITCHEN_SCENE_ROBOT_BASE_POS = [-0.66, 0, 0.804]
     planner.set_base_pose(KITCHEN_SCENE_ROBOT_BASE_POS, [0, 0, 0, 1])
 
-    # Get scripted poses for this task
-    target_poses, gripper = get_scripted_poses_for_task(problem_name, language_instruction)
+    # Get scripted joint positions for this task
+    target_joint_positions, target_grippers = get_scripted_joint_positions_for_task(problem_name, language_instruction)
 
     # wrap the environment with data collection wrapper
     tmp_directory = "demonstration_data/tmp/{}_ln_{}_scripted/{}".format(
@@ -394,7 +418,7 @@ if __name__ == "__main__":
     while i < args.num_demonstration:
         print(f"\n=== Collecting demonstration {i+1}/{args.num_demonstration} ===")
         saving = collect_scripted_trajectory(
-            env, planner, target_poses, gripper, remove_directory
+            env, planner, target_joint_positions, target_grippers, remove_directory
         )
         if saving:
             gather_demonstrations_as_hdf5(
