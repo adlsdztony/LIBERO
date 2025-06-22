@@ -7,7 +7,8 @@ from mplib import Pose
 
 class LiberoMPLibAdapter:
     """
-    Simple adapter class to use MPlib planner in LIBERO environment.
+    Simple adapter class to use MPlib planner in LIBERO environment. 
+    LIBERO obs.eef_quat is in [qx, qy, qz, qw] format
     """
 
     def __init__(self, urdf_path, srdf_path=None, move_group="panda_hand"):
@@ -20,7 +21,15 @@ class LiberoMPLibAdapter:
             move_group=move_group,
             joint_vel_limits=np.full(7, 0.3),
         )
-        
+    
+    def libero_to_mplib_quaternion(self, libero_quat):
+        x, y, z, w = libero_quat
+        mplib_quat = [w, x, y, z]
+        return mplib_quat
+
+    def set_base_pose(self, base_pose):
+        pass
+
     def get_current_joint_positions(self, obs):
         """
         Extract current joint positions from LIBERO observation
@@ -32,13 +41,27 @@ class LiberoMPLibAdapter:
             np.ndarray: Current joint positions (7 elements for Panda)
         """
         return obs['robot0_joint_pos']
+    
+    def get_fk_ee_pose(self, joint_positions):
+        """
+        Get end-effector pose from joint positions using MPLib FK
         
-    def plan_to_pose(self, target_pose, current_joint_positions, use_screw=True):
+        Args:
+            joint_positions: Joint angles (7 elements)
+            
+        Returns:
+            Pose: End-effector pose as mplib.Pose object
+        """
+        pose = self.planner.get_fk(joint_positions)
+        return pose
+        
+    def plan_to_pose(self, pos, quat, current_joint_positions, use_screw=True):
         """
         Plan a path to target pose
         
         Args:
-            target_pose: [x, y, z, qx, qy, qz, qw] - position and quaternion
+            pos: x, y, z
+            quat: libero eef quat
             current_joint_positions: Current joint angles (7 elements)
             use_screw: Try screw motion first, fallback to RRT if needed
             
@@ -46,8 +69,9 @@ class LiberoMPLibAdapter:
             dict: Planning result with 'status', 'position', etc.
         """
         # Convert target pose to mplib.Pose
-        pose = Pose(target_pose[:3], target_pose[3:])
-            
+        mplib_quat = self.libero_to_mplib_quaternion(quat)
+        pose = Pose(pos, mplib_quat)
+
         if use_screw:
             # Try screw motion first (straight line interpolation)
             result = self.planner.plan_screw(

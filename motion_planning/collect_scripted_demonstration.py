@@ -4,7 +4,7 @@ import argparse
 import cv2
 import datetime
 import h5py
-import init_path
+import scripts.init_path
 import json
 import numpy as np
 import os
@@ -25,7 +25,7 @@ from libero_adapter import LiberoMPLibAdapter, create_libero_planner
 
 
 def collect_scripted_trajectory(
-    env, planner, target_poses, remove_directory=[]
+    env, planner, target_poses, gripper, remove_directory=[]
 ):
     """
     Simple motion planning demonstration collection.
@@ -48,11 +48,16 @@ def collect_scripted_trajectory(
 
     print(f"Starting scripted trajectory with {len(target_poses)} target poses")
 
-    # Get initial observation with empty action
+    # Run multiple empty actions to ensure the arm is stable
     empty_action = np.zeros(8)
-    obs, _, _, _ = env.step(empty_action)
-    # print(obs)
-    
+    num_stabilize_steps = 100
+    for _ in range(num_stabilize_steps):
+        obs, _, _, _ = env.step(empty_action)
+        current_joints = planner.get_current_joint_positions(obs)
+        planner_ee_pose = planner.planner.get_current_end_effector_pose(current_joints)
+        # print(f"Stabilizing: {planner_ee_pose}")
+        env.render()
+
     while pose_index < len(target_poses):
         # Get current joint positions from observation
         current_joints = planner.get_current_joint_positions(obs)
@@ -62,28 +67,24 @@ def collect_scripted_trajectory(
         print(f"Planning to pose {pose_index + 1}/{len(target_poses)}: {target_pose}")
 
         # Plan trajectory to target pose
-        result = planner.plan_to_pose(target_pose, current_joints, use_screw=True)
+        pos, quat = target_pose
+        result = planner.plan_to_pose(pos, quat, current_joints, use_screw=True)
 
         if result["status"] != "Success":
             print(f"Planning failed with status: {result['status']}")
             # Try with RRT planner
-            result = planner.plan_to_pose(target_pose, current_joints, use_screw=False)
+            result = planner.plan_to_pose(pos, quat, current_joints, use_screw=False)
             if result["status"] != "Success":
                 print("RRT planning also failed, skipping this pose")
                 pose_index += 1
                 continue
 
         # Append several duplicate steps to hold the pose
-        duplicate_steps = 100
+        duplicate_steps = 50
         last_step = result["position"][-1]
-        last_vel = result["velocity"][-1]
         result["position"] = np.concatenate(
             [result["position"], np.tile(last_step, (duplicate_steps, 1))], axis=0
         )
-        result["velocity"] = np.concatenate(
-            [result["velocity"], np.tile(last_vel, (duplicate_steps, 1))], axis=0
-        )
-
         # Execute the planned trajectory
         n_steps = result["position"].shape[0]
         print(f"Executing trajectory with {n_steps} steps")
@@ -93,25 +94,20 @@ def collect_scripted_trajectory(
 
             # JOINT POSITION
             planned_joints = result["position"][i]
-            # print(f"Planned joints: {[f'{j:.3f}' for j in planned_joints]}")
             current_joints = planner.get_current_joint_positions(obs)
+            # print(f"Planned joints: {[f'{j:.3f}' for j in planned_joints]}")
             # print(f"Current joints: {[f'{j:.3f}' for j in obs['robot0_joint_pos']]}")
             action = np.zeros(8)
-            # action[:7] = planned_joints
             action[:7] = planned_joints - current_joints
-
-            # JOINT VELOCITY
-            # action = np.zeros(8)
-            # action[:7] = result["velocity"][i]
-
+            action[7] = gripper[pose_index]  # Set gripper action
             print(f"Action to take: {[f'{a:.3f}' for a in action]}")
             
             # Step the environment
             obs, reward, done, info = env.step(action)
             if count % 30 == 0:
-                print(obs["robot0_eef_pos"], obs["robot0_eef_quat"])
-                # print(obs["robot0_joint_pos"])
-
+                ee_pos = obs["robot0_eef_pos"]
+                ee_quat = obs["robot0_eef_quat"]
+                print("[{:.3f}, {:.3f}, {:.3f}]".format(*ee_pos), "[{:.3f}, {:.3f}, {:.3f}, {:.3f}]".format(*ee_quat))
             env.render()
 
             # Check for task completion
@@ -149,32 +145,27 @@ def collect_scripted_trajectory(
 
 
 def get_scripted_poses_for_task(problem_name, language_instruction):
-    """
-    Define scripted target poses for different tasks.
-    You can customize this function based on your specific tasks.
-    
-    Args:
-        problem_name: name of the problem
-        language_instruction: language instruction for the task
-        
-    Returns:
-        list: List of target poses [[x,y,z,qx,qy,qz,qw], ...]
-    """
-    KITCHEN_SCENE_ROBOT_POS_OFFSET = [-0.66, 0, 0.9]
+    KITCHEN_SCENE_ROBOT_POS_OFFSET = [-0.66, 0, 0.81]
     robot_pos_offset = KITCHEN_SCENE_ROBOT_POS_OFFSET
-    # Default poses - modify these based on your tasks
     poses = [
-        # [0, 0, 1, 0, 1, 0, 0]
-        # [0.00206556, -0.15240053, 1.09415877, 0.69903985, 0.71446188, 0.02918334, 0.00598762]
-        [ 0.01861123, -0.16616471,  1.1038921, 0.74729594, 0.66147855, 0.02272578, 0.05897825 ]
+        [[0.038, 0.048, 1.049], [1.000, 0.000, -0.028, 0.000]],
+        [[0.036, 0.051, 0.934], [1.000, 0.000, -0.028, -0.000]],
+        [[0.036, 0.051, 0.934], [1.000, 0.000, -0.028, -0.000]],
+        [[0.042, 0.048, 1.080], [1.000, 0.000, -0.029, 0.000]]
+    ]
+    gripper = [
+        -1,
+        0,
+        1,
+        1,
     ]
     for pose in poses:
-        pose[0] -= robot_pos_offset[0]
-        pose[1] -= robot_pos_offset[1]
-        pose[2] -= robot_pos_offset[2]
+        pose[0][0] -= robot_pos_offset[0]
+        pose[0][1] -= robot_pos_offset[1]
+        pose[0][2] -= robot_pos_offset[2]
 
     print(f"Using {len(poses)} scripted poses for task: {language_instruction}")
-    return poses
+    return poses, gripper
 
 
 def gather_demonstrations_as_hdf5(
@@ -278,12 +269,6 @@ if __name__ == "__main__":
         help="Which camera to use for collecting demos",
     )
     parser.add_argument(
-        "--controller",
-        type=str,
-        default="OSC_POSE",
-        help="Choice of controller. Can be 'IK_POSE' or 'OSC_POSE'",
-    )
-    parser.add_argument(
         "--num-demonstration",
         type=int,
         default=10,
@@ -308,13 +293,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Get controller config
-    controller_config = load_controller_config(default_controller=args.controller)
+    controller_config = load_controller_config(default_controller="JOINT_POSITION")
     controller_config["kp"] = 150.0
-    controller_config["damping_ratio"] = 0.0
-    print("Controller config", controller_config)
-        # Controller config {'type': 'JOINT_POSITION', 'input_max': 1, 'input_min': -1, 'output_max': 0.05, 'output_min': -0.05,
-        #  'kp': 300.0, 'damping_ratio': 0.0, 'impedance_mode': 'fixed', 'kp_limits': [0, 300], 'damping_ratio_limits': [0, 10], 
-        # 'qpos_limits': None, 'interpolation': None, 'ramp_ratio': 0.2}
+    controller_config["damping_ratio"] = 0.8
+    controller_config["output_max"] = 0.5
+    controller_config["output_min"] = -0.5
+    # print("Controller config", controller_config)
 
     # Create argument configuration
     config = {
@@ -366,8 +350,13 @@ if __name__ == "__main__":
         print("Please check URDF/SRDF paths and ensure mplib is installed")
         exit(1)
 
+    # Set the transform from the world to the robot base
+    # KITCHEN_SCENE_ROBOT_POS_OFFSET = [-0.66, 0, 0.81]
+    # robot_base_pose = KITCHEN_SCENE_ROBOT_POS_OFFSET + [1, 0, 0, 0]
+    # planner.set_base_pose(robot_base_pose)
+
     # Get scripted poses for this task
-    target_poses = get_scripted_poses_for_task(problem_name, language_instruction)
+    target_poses, gripper = get_scripted_poses_for_task(problem_name, language_instruction)
 
     # wrap the environment with data collection wrapper
     tmp_directory = "demonstration_data/tmp/{}_ln_{}_scripted/{}".format(
@@ -402,7 +391,7 @@ if __name__ == "__main__":
     while i < args.num_demonstration:
         print(f"\n=== Collecting demonstration {i+1}/{args.num_demonstration} ===")
         saving = collect_scripted_trajectory(
-            env, planner, target_poses, remove_directory
+            env, planner, target_poses, gripper, remove_directory
         )
         if saving:
             gather_demonstrations_as_hdf5(
