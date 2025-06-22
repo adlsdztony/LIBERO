@@ -15,6 +15,8 @@ VALIDATE_PREDICATE_FN_DICT = {
     "minus": Minus(),
     "greaterthan": GreaterThan(),
     "lessthan": LessThan(),
+    "arithmetic": Arithmetic(),
+    "trianglecenter": TriangleCenter(),
     "distance": Distance(),
     "planardistance": PlanarDistance(),
     "incontact": InContact(),
@@ -35,9 +37,12 @@ VALIDATE_PREDICATE_FN_DICT = {
     "upsidedown": UpsideDown(),
     "upright": Upright(),
     "axisalignedwithin": AxisAlignedWithin(),
+    "axisalignedwithinworldaxis": AxisAlignedWithinWorldAxis(),
     "under": Under(),
     "posigreaterthan": PosiGreaterThan(),
+    "posigreaterthanobject": PosiGreaterThanObject(),
     "posilessthan": PosiLessThan(),
+    "posilessthanobject": PosiLessThanObject(),
     "positionwithin": PositionWithin(),
     "positionwithinobject": PositionWithinObject(),
     "positionwithinobjectannulus": PositionWithinObjectAnnulus(),
@@ -63,8 +68,8 @@ VALIDATE_PREDICATE_FN_DICT = {
     "orderalongaxis": OrderAlongAxis(),
     "midbetween": MidBetween(),
     "relaxedmidbetween": RelaxedMidBetween(),
-    "axisalignedwithinworldaxis": AxisAlignedWithinWorldAxis(),
     "istouchingsideaxis": IsTouchingSideAxis(),
+    "axisalignedwithinobjectaxis": AxisAlignedWithinObjectAxis(),
     "neuraljudge": NeuralJudge(),
 }
 
@@ -73,6 +78,9 @@ VALIDATE_PREDICATE_FN_DICT.update({
     "constraintalways": ConstraintAlways(),
     "constraintnever": ConstraintNever(),
     "constraintonce": ConstraintOnce(),
+
+    "sequential": Sequential(),
+    "watch": Watch(),
 })
 
 

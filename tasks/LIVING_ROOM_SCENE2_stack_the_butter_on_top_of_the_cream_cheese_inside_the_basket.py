@@ -9,25 +9,20 @@ from libero.libero.utils.task_generation_utils import (
 )
 import numpy as np
 
-from libero.libero.benchmark.mu_creation import LivingRoomScene3
+from libero.libero.benchmark.mu_creation import LivingRoomScene2
 
 def main():
 
     scene_name = "living_room_scene2"
-    language = "First turn the tomato can upside down, then place the butter on top, then cover both with the basket"
+    language = "Stack the butter on top of the cream cheese inside the basket"
     register_task_info(
         language,
         scene_name=scene_name,
-        objects_of_interest=["butter_1", "basket_1", "tomato_sauce_1"],
+        objects_of_interest=["ketchup_1", "basket_1"],
         goal_states=[
-            ("AxisAlignedWithin", "tomato_sauce_1", "y", 175, 180),
-            ("RelaxedOn", "butter_1", "tomato_sauce_1"),
-            ("In", "tomato_sauce_1", "basket_1_contain_region"),
+            ("In", "cream_cheese_1", "basket_1_contain_region"),
             ("In", "butter_1", "basket_1_contain_region"),
-            ("UpsideDown", "basket_1"),
-            ("PositionWithin", "basket_1", 0.0, 0.0, 0.582, 1, 1, 0.01),
-            ("PositionWithin", "tomato_sauce_1", 0.0, 0.0, 0.474, 1, 1, 0.02),
-            ("PositionWithin", "butter_1", 0.0, 0.0, 0.521, 1, 1, 0.02),
+            ("On", "butter_1", "cream_cheese_1"),
         ],
     )
 

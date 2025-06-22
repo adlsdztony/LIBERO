@@ -236,6 +236,73 @@ class LessThan(BinaryAtomic):
     def expected_arg_types(self):
         return [float, float]
 
+class Arithmetic(MultiarayAtomic):
+    """
+    Perform a chain of arithmetic operations on a list of floats and operations.
+    
+    Usage: Arithmetic()(start_value, op1, val1, op2, val2, ...)
+    Example: Arithmetic()(1.0, 'add', 2.0, 'subtract', 3.0)
+    """
+    def __call__(self, *args):
+        if len(args) < 3 or len(args) % 2 == 0:
+            raise ValueError("Expected at least one operation: (start_val, op1, val1, ...), with odd total length.")
+
+        result = args[0]  # starting number
+        i = 1
+        while i < len(args):
+            op = args[i]
+            val = args[i + 1]
+
+            if op == "add":
+                result += val
+            elif op == "subtract":
+                result -= val
+            elif op == "multiply":
+                result *= val
+            elif op == "divide":
+                result /= val
+            else:
+                raise ValueError(f"Unsupported operation: {op}")
+            i += 2
+        return result
+
+    def expected_arg_types(self, *args):
+        return [float, str, float]
+    
+class TriangleCenter(BinaryAtomic):
+    """
+    Check if the position of arg1 is within a triangle defined by the positions of arg2, arg3, and arg4 on the XY plane.
+
+    Args:
+        arg1: The object whose position is being checked (BaseObjectState).
+        arg2: The first vertex of the triangle (BaseObjectState).
+        arg3: The second vertex of the triangle (BaseObjectState).
+        arg4: The third vertex of the triangle (BaseObjectState).
+    Returns:
+        bool: True if arg1's position is within the triangle formed by arg2, arg3, and arg4, False otherwise.
+    """
+    def __call__(self, arg1, arg2, arg3, arg4, tol):
+        pos1 = np.array(arg1.get_geom_state()["pos"])
+        pos2 = np.array(arg2.get_geom_state()["pos"])
+        pos3 = np.array(arg3.get_geom_state()["pos"])
+        pos4 = np.array(arg4.get_geom_state()["pos"])
+
+        # Project the positions onto the XY plane
+        pos1_xy = pos1[:2]
+        pos2_xy = pos2[:2]
+        pos3_xy = pos3[:2]
+        pos4_xy = pos4[:2]
+
+        tolerance = tol # Tolerance for proximity check
+        # Calculate the position of centroid of the triangle formed by pos2, pos3, and pos4
+        centroid = (pos2_xy + pos3_xy + pos4_xy) / 3.0
+
+        # check if pos1_xy is within the triangle formed by pos2_xy, pos3_xy, and pos4_xy
+        return np.all(np.abs(pos1_xy - centroid) < tolerance)
+
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState, BaseObjectState, BaseObjectState, float]
+
 
 class Distance(BinaryAtomic):
     """
@@ -250,6 +317,7 @@ class Distance(BinaryAtomic):
     def __call__(self, arg1, arg2):
         pos1 = arg1.get_geom_state()["pos"]
         pos2 = arg2.get_geom_state()["pos"]
+        # print(np.linalg.norm(np.array(pos1) - np.array(pos2)))
         return np.linalg.norm(np.array(pos1) - np.array(pos2))
 
     def expected_arg_types(self):
@@ -572,6 +640,31 @@ class PosiGreaterThan(UnaryAtomic):
     
     def expected_arg_types(self):
         return [BaseObjectState, str, float]
+
+class PosiGreaterThanObject(UnaryAtomic):
+    """
+    Check if the position of one object is greater than another object's position along a specified axis with an offset.
+    Usage: PosiGreaterThanObject()(object1, object2, axis, offset)
+    Args:
+        obj1: The first object whose position is being checked.
+        obj2: The second object whose position is used for comparison.
+        axis: A string indicating the axis ('x', 'y', or 'z') to check.
+        offset: A float value to add to the second object's position along the specified axis.
+    Returns:
+        bool: True if the position of obj1 along the specified axis is greater than the position of obj2 plus the offset, False otherwise.
+    """
+    def __call__(self, *args):
+        obj1, obj2, axis, offset  = args
+        if axis not in {"x", "y", "z"}:
+            raise ValueError("Axis must be one of 'x', 'y', or 'z'")
+
+        pos1 = obj1.get_geom_state()["pos"]
+        pos2 = obj2.get_geom_state()["pos"]
+        axis_index = {"x": 0, "y": 1, "z": 2}[axis]
+        return pos1[axis_index] > (pos2[axis_index] + offset)
+
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState, str, float]
     
 class PosiLessThan(UnaryAtomic):
     """
@@ -597,12 +690,38 @@ class PosiLessThan(UnaryAtomic):
     def expected_arg_types(self):
         return [BaseObjectState, str, float]
 
+class PosiLessThanObject(UnaryAtomic):
+    """
+    Check if the position of one object is less than another object's position along a specified axis with an offset.
+    
+    Usage: PosiLessThanObject()(object1, object2, axis, offset)
+    Args:
+        obj1: The first object whose position is being checked.
+        obj2: The second object whose position is used for comparison.
+        axis: A string indicating the axis ('x', 'y', or 'z') to check.
+        offset: A float value to subtract from the second object's position along the specified axis.
+    Returns:
+        bool: True if the position of obj1 along the specified axis is less than the position of obj2 minus the offset, False otherwise.
+    """
+    def __call__(self, *args):
+        obj1, obj2, axis, offset  = args
+        if axis not in {"x", "y", "z"}:
+            raise ValueError("Axis must be one of 'x', 'y', or 'z'")
+
+        pos1 = obj1.get_geom_state()["pos"]
+        pos2 = obj2.get_geom_state()["pos"]
+        axis_index = {"x": 0, "y": 1, "z": 2}[axis]
+        return pos1[axis_index] < (pos2[axis_index] - offset)
+
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState, str, float]
+
 class AxisAlignedWithin(UnaryAtomic):
     """
     Check if the object's specified axis is within a degree range [min_deg, max_deg]
     from alignment with the world Z+ axis.
 
-    Usage: Upright()(object, axis, min_deg, max_deg)
+    Usage: AxisAlignedWithin()(object, axis, min_deg, max_deg)
     Args:
         obj: The object whose orientation is being checked.
         axis: A string indicating the axis ('x', 'y', or 'z') to check.
@@ -615,7 +734,10 @@ class AxisAlignedWithin(UnaryAtomic):
         ValueError: If the axis is not one of 'x', 'y', or 'z', or if the degree range is invalid.
     """
 
-    def __call__(self, obj, axis, min_deg, max_deg):
+    def __call__(self, *args):
+        if len(args) != 4:
+            raise ValueError("AxisAlignedWithin expects 4 arguments: object, axis ('x', 'y', 'z'), min_degree, max_degree")
+        obj, axis, min_deg, max_deg = args
         if axis not in {"x", "y", "z"}:
             raise ValueError("Axis must be one of 'x', 'y', or 'z'")
         if not (0 <= min_deg <= max_deg <= 180):
@@ -704,6 +826,110 @@ class AxisAlignedWithinWorldAxis(UnaryAtomic):
 
     def expected_arg_types(self):
         return [BaseObjectState, str, float, float, str]
+
+class AxisAlignedWithinY(UnaryAtomic):
+    """
+    Check if the object's specified axis is within a degree range [min_deg, max_deg]
+    from alignment with the world Y+ axis.
+
+    Usage: AxisAlignedWithinY()(object, min_deg, max_deg)
+    Args:
+        obj: The object whose orientation is being checked.
+        axis: A string indicating the axis ('x', 'y', or 'z') to check.
+        min_deg: Minimum angle in degrees for the axis to be considered aligned.
+        max_deg: Maximum angle in degrees for the axis to be considered aligned.
+    Returns:
+        bool: True if the object's specified axis is within the degree range from alignment with Z+,
+        False otherwise.
+    Raises:
+        ValueError: If the axis is not one of 'x', 'y', or 'z', or if the degree range is invalid.
+    """
+
+    def __call__(self, *args):
+        if len(args) != 4:
+            raise ValueError("AxisAlignedWithinY expects 4 arguments: object, axis ('x', 'y', 'z'), min_degree, max_degree")
+        obj, axis, min_deg, max_deg = args
+        if axis not in {"x", "y", "z"}:
+            raise ValueError("Axis must be one of 'x', 'y', or 'z'")
+        if not (0 <= min_deg <= max_deg <= 180):
+            raise ValueError("Degrees must satisfy 0 <= min_deg <= max_deg <= 180")
+
+        min_rad = np.radians(min_deg)
+        max_rad = np.radians(max_deg)
+        cos_min = np.cos(min_rad)
+        cos_max = np.cos(max_rad)
+
+        geom = obj.get_geom_state()
+        w, x, y, z = geom["quat"]
+        quat_for_rs = np.array([x, y, z, w])
+        R = transform_utils.quat2mat(quat_for_rs)
+
+        axis_index = {"x": 0, "y": 1, "z": 2}[axis]
+        object_axis_world = R[:, axis_index]
+        cos_angle = object_axis_world[1]
+        
+        # # this is used to print the current angle of the axis with respect to Z+ for debugging
+        # # calculate current angle in degrees
+        # angle_rad = np.arccos(cos_angle)
+        # angle_deg = np.degrees(angle_rad)
+        # print(f"Current angle of {axis} axis with Z+ is {angle_deg:.2f} degrees")
+
+        return cos_max <= cos_angle <= cos_min
+
+    def expected_arg_types(self):
+        return [BaseObjectState, str, float, float]
+
+class AxisAlignedWithinY(UnaryAtomic):
+    """
+    Check if the object's specified axis is within a degree range [min_deg, max_deg]
+    from alignment with the world Y+ axis.
+
+    Usage: AxisAlignedWithinY()(object, min_deg, max_deg)
+    Args:
+        obj: The object whose orientation is being checked.
+        axis: A string indicating the axis ('x', 'y', or 'z') to check.
+        min_deg: Minimum angle in degrees for the axis to be considered aligned.
+        max_deg: Maximum angle in degrees for the axis to be considered aligned.
+    Returns:
+        bool: True if the object's specified axis is within the degree range from alignment with Z+,
+        False otherwise.
+    Raises:
+        ValueError: If the axis is not one of 'x', 'y', or 'z', or if the degree range is invalid.
+    """
+
+    def __call__(self, *args):
+        if len(args) != 4:
+            raise ValueError("AxisAlignedWithinY expects 4 arguments: object, axis ('x', 'y', 'z'), min_degree, max_degree")
+        obj, axis, min_deg, max_deg = args
+        if axis not in {"x", "y", "z"}:
+            raise ValueError("Axis must be one of 'x', 'y', or 'z'")
+        if not (0 <= min_deg <= max_deg <= 180):
+            raise ValueError("Degrees must satisfy 0 <= min_deg <= max_deg <= 180")
+
+        min_rad = np.radians(min_deg)
+        max_rad = np.radians(max_deg)
+        cos_min = np.cos(min_rad)
+        cos_max = np.cos(max_rad)
+
+        geom = obj.get_geom_state()
+        w, x, y, z = geom["quat"]
+        quat_for_rs = np.array([x, y, z, w])
+        R = transform_utils.quat2mat(quat_for_rs)
+
+        axis_index = {"x": 0, "y": 1, "z": 2}[axis]
+        object_axis_world = R[:, axis_index]
+        cos_angle = object_axis_world[1]
+        
+        # # this is used to print the current angle of the axis with respect to Z+ for debugging
+        # # calculate current angle in degrees
+        # angle_rad = np.arccos(cos_angle)
+        # angle_deg = np.degrees(angle_rad)
+        # print(f"Current angle of {axis} axis with Z+ is {angle_deg:.2f} degrees")
+
+        return cos_max <= cos_angle <= cos_min
+
+    def expected_arg_types(self):
+        return [BaseObjectState, str, float, float]
 
 class PrintGeomState(UnaryAtomic):
     """
@@ -1554,6 +1780,71 @@ class IsTouchingSideAxis(BinaryAtomic):
 
     def expected_arg_types(self):
         return [BaseObjectState, BaseObjectState, str, float]
+
+
+class AxisAlignedWithinObjectAxis(BinaryAtomic):
+    """
+    Check if the angle between two specified axes of two objects is within a given range.
+    
+    Usage: AxisAlignedWithinObjectAxis()(obj1, obj2, axis1, axis2, min_deg, max_deg)
+    Arguments:
+    - obj1: The first object.
+    - obj2: The second object.
+    - axis1: A string indicating the axis ('x', 'y', or 'z') of the first object.
+    - axis2: A string indicating the axis ('x', 'y', or 'z') of the second object.
+    - min_deg: Minimum angle in degrees for the axes to be considered aligned.
+    - max_deg: Maximum angle in degrees for the axes to be considered aligned.
+    
+    Returns:
+    - True if the angle between the specified axes is within the range [min_deg, max_deg].
+    - False otherwise.
+    
+    Raises:
+    - ValueError: If the axes are not one of 'x', 'y', or 'z', or if the degree range is invalid.
+    """
+    def __call__(self, obj1, obj2, axis1, axis2, min_deg, max_deg):
+        if axis1 not in {"x", "y", "z"}:
+            raise ValueError("axis1 must be one of 'x', 'y', or 'z'")
+        if axis2 not in {"x", "y", "z"}:
+            raise ValueError("axis2 must be one of 'x', 'y', or 'z'")
+        if not (0 <= min_deg <= max_deg <= 180):
+            raise ValueError("Degrees must satisfy 0 <= min_deg <= max_deg <= 180")
+
+        min_rad = np.radians(min_deg)
+        max_rad = np.radians(max_deg)
+        cos_min = np.cos(min_rad)
+        cos_max = np.cos(max_rad)
+
+        # Get the quaternion for the first object
+        geom1 = obj1.get_geom_state()
+        w1, x1, y1, z1 = geom1["quat"]
+        quat1 = np.array([x1, y1, z1, w1])
+        R1 = transform_utils.quat2mat(quat1)
+
+        # Get the quaternion for the second object
+        geom2 = obj2.get_geom_state()
+        w2, x2, y2, z2 = geom2["quat"]
+        quat2 = np.array([x2, y2, z2, w2])
+        R2 = transform_utils.quat2mat(quat2)
+
+        # Get the specified axis of each object in world coordinates
+        axis_index1 = {"x": 0, "y": 1, "z": 2}[axis1]
+        axis_index2 = {"x": 0, "y": 1, "z": 2}[axis2]
+        object1_axis = R1[:, axis_index1]
+        object2_axis = R2[:, axis_index2]
+
+        # Calculate the cosine of the angle between the two axes
+        cos_angle = np.dot(object1_axis, object2_axis)
+        # Clamp to [-1, 1] to avoid numerical issues
+        cos_angle = np.clip(cos_angle, -1.0, 1.0)
+        
+        # Check if the angle is within the specified range
+        # Note: cosine is decreasing as the angle increases from 0 to 180 degrees
+        return cos_max <= cos_angle <= cos_min
+
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState, str, str, float, float]
+    
 class YawAngleAligned(BinaryAtomic):
     """
     Check if the yaw (rotation around z-axis) of two objects are aligned within a specified threshold (in degrees),
