@@ -1,5 +1,6 @@
 *~
 .hydra
+.env
 *pyc
 datasets
 results

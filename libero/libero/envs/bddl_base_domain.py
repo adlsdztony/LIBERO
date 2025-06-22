@@ -13,6 +13,7 @@ import robosuite.macros as macros
 import mujoco
 
 import libero.libero.envs.bddl_utils as BDDLUtils
+from libero.libero.envs.predicates.predicate_wrapper import Constraint
 from libero.libero.envs.robots import *
 from libero.libero.envs.utils import *
 from libero.libero.envs.object_states import *
@@ -99,15 +100,15 @@ class BDDLBaseDomain(SingleArmEnv):
         if object_property_initializers is not None:
             self.object_property_initializers = object_property_initializers
         else:
-            self.object_property_initializers = list()
-
-        # Keep track of movable objects in the tasks
+            self.object_property_initializers = list()        # Keep track of movable objects in the tasks
         self.objects_dict = {}
         # Kepp track of fixed objects in the tasks
         self.fixtures_dict = {}
         # Keep track of site objects in the tasks. site objects
         # (instances of SiteObject)
         self.object_sites_dict = {}
+        # Keep track of robot components (gripper fingers, hand, etc.)
+        self.robot_states_dict = {}
         # This is a dictionary that stores all the object states
         # interface for all the objects
         self.object_states_dict = {}
@@ -126,6 +127,14 @@ class BDDLBaseDomain(SingleArmEnv):
         self.bddl_file_name = bddl_file_name
         self.parsed_problem = BDDLUtils.robosuite_parse_problem(self.bddl_file_name)
 
+        for item in self.parsed_problem["goal_state"]:
+            if isinstance(item, list) and item and item[0] == "neuraljudge":
+                sample = True
+                item[1:] = ["_".join(item[1:])]
+                break
+        
+        # print(self.parsed_problem["goal_state"])
+
         self.obj_of_interest = self.parsed_problem["obj_of_interest"]
 
         self._assert_problem_name()
@@ -135,6 +144,9 @@ class BDDLBaseDomain(SingleArmEnv):
         self._arena_properties = scene_properties
 
         self.debug_time = 0
+
+        # deep copy VALIDATE_PREDICATE_FN_DICT
+        self.VALIDATE_PREDICATE_FN_DICT = deepcopy(VALIDATE_PREDICATE_FN_DICT)
 
         super().__init__(
             robots=robots,
@@ -237,8 +249,7 @@ class BDDLBaseDomain(SingleArmEnv):
             object_states_dict[object_name] = ObjectState(
                 self, object_name, is_fixture=True
             )
-            if (
-                self.fixtures_dict[object_name].category_name
+            if (                self.fixtures_dict[object_name].category_name
                 in VISUAL_CHANGE_OBJECTS_DICT
             ):
                 tracking_object_states_changes.append(object_states_dict[object_name])
@@ -251,6 +262,11 @@ class BDDLBaseDomain(SingleArmEnv):
                 object_name,
                 parent_name=self.object_sites_dict[object_name].parent_name,
             )
+            
+        # Add robot states for gripper components
+        for geom_name in self.robot_states_dict.keys():
+            object_states_dict[geom_name] = self.robot_states_dict[geom_name]
+            
         self.object_states_dict = object_states_dict
         self.tracking_object_states_change = tracking_object_states_changes
 
@@ -427,6 +443,34 @@ class BDDLBaseDomain(SingleArmEnv):
             self.obj_body_id[fixture_name] = self.sim.model.body_name2id(
                 fixture_body.root_body
             )
+            
+        # Initialize robot states for gripper components
+        self._setup_robot_states()
+
+    def _setup_robot_states(self):
+        """
+        Initialize robot states for gripper components that can be used in predicates
+        """
+        # Define the gripper geom names we want to track
+        robot_geom_names = {
+            "gripper0_finger1": "gripper0_finger1_collision",
+            "gripper0_finger2": "gripper0_finger2_collision",
+            "gripper0_finger1_pad": "gripper0_finger1_pad_collision",
+            "gripper0_finger2_pad": "gripper0_finger2_pad_collision",
+            "gripper0_hand": "gripper0_hand_collision"
+        }
+        
+        # Check if these geoms exist in the simulation and create robot states for them
+        for name, geom_name in robot_geom_names.items():
+            try:
+                # Try to get the geom id to verify it exists
+                geom_id = self.sim.model.geom_name2id(geom_name)
+                # If successful, create a robot state for this geom
+                self.robot_states_dict[name] = RobotObjectState(self, geom_name)
+            except Exception as e:
+                # If the geom doesn't exist, skip it (some robots might not have these exact names)
+                print(f"Warning: Geom '{name}' not found in simulation: {e}")
+                continue
 
     def _setup_observables(self):
         """
@@ -761,6 +805,8 @@ class BDDLBaseDomain(SingleArmEnv):
         super()._reset_internal()
         self.debug_time = 0
 
+        self.VALIDATE_PREDICATE_FN_DICT = deepcopy(VALIDATE_PREDICATE_FN_DICT)
+
         # Reset all object positions using initializer sampler if we're not directly loading from an xml
         if not self.deterministic_reset:
 
@@ -817,6 +863,58 @@ class BDDLBaseDomain(SingleArmEnv):
         self.debug_time += 1
 
         return all(results)
+    
+    def _check_success_without_neuraljudge(self):
+        """
+        Check if the goal is achieved without considering neuraljudge predicates.
+        """
+        goal_state = self.parsed_problem["goal_state"]
+        results = []
+        for state in goal_state:
+            if state[0] == "neuraljudge":
+                continue
+            result = self._eval_predicate(state)
+            results.append(result)
+        
+        return all(results)
+
+    
+    def _check_constraint(self, constraint):
+        """
+        Check if the constraint is satisfied. Consider conjunction constraints at the moment
+        """
+        predicate = constraint[1]
+        result = self._eval_predicate(predicate)
+        predicate_str = "_".join(predicate) if isinstance(predicate, list) else predicate
+
+        if constraint[0] == "constraintalways":
+            if self.constraint_satisfied.get(predicate_str) is None:
+                # If the predicate is not in the constraint_satisfied dict, initialize it to True
+                self.constraint_satisfied[predicate_str] = True
+
+            self.constraint_satisfied[predicate_str] = (
+                result and self.constraint_satisfied[predicate_str]
+            )
+        elif constraint[0] == "constraintonce":
+            if self.constraint_satisfied.get(predicate_str) is None:
+                # If the predicate is not in the constraint_satisfied dict, initialize it to True
+                self.constraint_satisfied[predicate_str] = False
+
+            self.constraint_satisfied[predicate_str] = (
+                result or self.constraint_satisfied[predicate_str]
+            )
+        elif constraint[0] == "constraintnever":
+            if self.constraint_satisfied.get(predicate_str) is None:
+                # If the predicate is not in the constraint_satisfied dict, initialize it to True
+                self.constraint_satisfied[predicate_str] = True
+
+            self.constraint_satisfied[predicate_str] = (
+                not result and self.constraint_satisfied[predicate_str]
+            )
+        else:
+            raise ValueError(f"Unknown constraint type: {constraint[0]}")
+        
+        return self.constraint_satisfied[predicate_str]
 
     def _eval_predicate(self, state):
         
@@ -825,12 +923,12 @@ class BDDLBaseDomain(SingleArmEnv):
                 return self.object_states_dict[state]
             else:                                     # a literal (string, float, int, etc.)
                 return state
-            
+        
         predicate_fn_name, *arg_exprs = state
-        if predicate_fn_name not in VALIDATE_PREDICATE_FN_DICT:
+        if predicate_fn_name not in self.VALIDATE_PREDICATE_FN_DICT:
             raise ValueError(f"Unknown predicate: {predicate_fn_name}")
         
-        predicate_fn = VALIDATE_PREDICATE_FN_DICT[predicate_fn_name]
+        predicate_fn = self.VALIDATE_PREDICATE_FN_DICT[predicate_fn_name]
         expected_types = predicate_fn.expected_arg_types()
 
         # print(predicate_fn_name, expected_types, arg_exprs)
@@ -862,6 +960,10 @@ class BDDLBaseDomain(SingleArmEnv):
         # wrap results back into one tuple for variable-length truth predicates
         if variable_len_predicate:
             evaluated_args = (tuple(evaluated_args),)
+
+        if isinstance(predicate_fn, Constraint):
+            predicate_str = f"{str(state)}"
+            return predicate_fn(predicate_str, *evaluated_args)
         
         return predicate_fn(*evaluated_args)
         
@@ -928,6 +1030,7 @@ class BDDLBaseDomain(SingleArmEnv):
             self.fixtures_dict,
             self.objects_dict,
             self.object_sites_dict,
+            self.robot_states_dict,
         ]:
             if object_name in query_dict:
                 return query_dict[object_name]

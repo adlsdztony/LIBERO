@@ -188,6 +188,54 @@ class Equal(BinaryAtomic):
     def expected_arg_types(self):
         return [float, float, float]
 
+class Minus(BinaryAtomic):
+    """
+    Subtracts the second float value from the first float value.
+    Args:
+        arg1: First float value.
+        arg2: Second float value.
+    Returns:
+        float: The result of arg1 - arg2.    
+    """
+    def __call__(self, arg1, arg2):
+        return arg1 - arg2
+
+    def expected_arg_types(self):
+        return [float, float]
+
+class GreaterThan(BinaryAtomic):
+    """
+    Checks if the first float value is greater than the second float value.
+    
+    Args:
+        arg1: First float value.
+        arg2: Second float value.
+    Returns:
+        bool: True if arg1 is greater than arg2, otherwise False.
+    """
+    def __call__(self, arg1, arg2):
+        return arg1 > arg2
+
+    def expected_arg_types(self):
+        return [float, float]
+
+
+class LessThan(BinaryAtomic):
+    """
+    Checks if the first float value is less than the second float value.
+    
+    Args:
+        arg1: First float value.
+        arg2: Second float value.
+    Returns:
+        bool: True if arg1 is less than arg2, otherwise False.
+    """
+    def __call__(self, arg1, arg2):
+        return arg1 < arg2
+
+    def expected_arg_types(self):
+        return [float, float]
+
 class Arithmetic(MultiarayAtomic):
     """
     Perform a chain of arithmetic operations on a list of floats and operations.
@@ -271,6 +319,24 @@ class Distance(BinaryAtomic):
         pos2 = arg2.get_geom_state()["pos"]
         # print(np.linalg.norm(np.array(pos1) - np.array(pos2)))
         return np.linalg.norm(np.array(pos1) - np.array(pos2))
+
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState]
+    
+class PlanarDistance(BinaryAtomic):
+    """
+    Computes the planar distance (ignoring the z-axis) between two objects using their position data.
+    
+    Args:
+        arg1: The first object (BaseObjectState) whose position is used.
+        arg2: The second object (BaseObjectState) whose position is used.
+    Returns:
+        float: The planar distance between the positions of arg1 and arg2.
+    """
+    def __call__(self, arg1, arg2):
+        pos1 = arg1.get_geom_state()["pos"]
+        pos2 = arg2.get_geom_state()["pos"]
+        return np.linalg.norm(np.array(pos1[:2]) - np.array(pos2[:2]))
 
     def expected_arg_types(self):
         return [BaseObjectState, BaseObjectState]
@@ -669,8 +735,8 @@ class AxisAlignedWithin(UnaryAtomic):
         object_axis_world = R[:, axis_index]
         cos_angle = object_axis_world[2]
         
-        # # this is used to print the current angle of the axis with respect to Z+ for debugging
-        # # calculate current angle in degrees
+        # this is used to print the current angle of the axis with respect to Z+ for debugging
+        # calculate current angle in degrees
         # angle_rad = np.arccos(cos_angle)
         # angle_deg = np.degrees(angle_rad)
         # print(f"Current angle of {axis} axis with Z+ is {angle_deg:.2f} degrees")
@@ -1155,7 +1221,56 @@ class MidBetween(MultiarayAtomic):
 
     def expected_arg_types(self):
         return [BaseObjectState, BaseObjectState, BaseObjectState, str]
-      
+    
+class MidBetweenAnyDirection(MultiarayAtomic):
+    """
+    Checks if the middle object (M) is between the left object (L) and the right object (R)
+    in any direction (not limited to a specific axis), by checking the angle between LM and MR vectors.
+
+    Usage: MidBetweenAnyDirection()(L, M, R, ignore_z=True, angle_threshold=30)
+    Args:
+        L: The first object (BaseObjectState).
+        M: The middle object (BaseObjectState).
+        R: The third object (BaseObjectState).
+        ignore_z: If True, only consider the xy plane.
+        angle_threshold: The maximum angle (in degrees) allowed between LM and MR (suggested: 30).
+    Returns:
+        bool: True if the angle between LM and MR is less than angle_threshold degrees,
+              and L is in contact with M, and M is in contact with R.
+    """
+    def __call__(self, L, M, R, ignore_z=True, angle_threshold=30):
+        pos_L = np.array(L.get_geom_state()["pos"])
+        pos_M = np.array(M.get_geom_state()["pos"])
+        pos_R = np.array(R.get_geom_state()["pos"])
+
+        if ignore_z:
+            pos_L = pos_L[:2]
+            pos_M = pos_M[:2]
+            pos_R = pos_R[:2]
+
+        v_LM = pos_M - pos_L
+        v_MR = pos_R - pos_M
+
+        norm_LM = np.linalg.norm(v_LM)
+        norm_MR = np.linalg.norm(v_MR)
+        if norm_LM == 0 or norm_MR == 0:
+            return False  # Avoid division by zero
+
+        cos_angle = np.dot(v_LM, v_MR) / (norm_LM * norm_MR)
+        # Clamp to [-1, 1] to avoid numerical issues
+        cos_angle = np.clip(cos_angle, -1.0, 1.0)
+        # Convert angle_threshold to cosine
+        angle_threshold_rad = np.radians(angle_threshold)
+        cos_threshold = np.cos(angle_threshold_rad)
+
+        return (
+            cos_angle > cos_threshold
+            and L.check_contact(M)
+            and M.check_contact(R)
+        )
+
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState, BaseObjectState, bool, float]
     
 class RelaxedMidBetween(MultiarayAtomic):
     """
@@ -1223,9 +1338,9 @@ class LROrdering(MultiarayAtomic):
     """
     This predicate checks if a sequence of objects is ordered from left to right based on their y-coordinates.
     
-    Usage: LROrdering()(object1, object2, ..., objectN)
+    Usage: LROrdering()(object1, object2, object3)
     Args:
-        *args: A variable number of BaseObjectState objects to be checked for left-to-right ordering.
+        *args: Three BaseObjectState objects to be checked for left-to-right ordering.
     Returns:
         bool: True if the objects are ordered from left to right based on their y-coordinates, False otherwise.
     """
@@ -1241,6 +1356,33 @@ class LROrdering(MultiarayAtomic):
     
     def expected_arg_types(self):
         return [BaseObjectState, BaseObjectState, BaseObjectState]
+
+
+class OrderAlongAxis(MultiarayAtomic):
+    """
+    Check if a sequence of objects is ordered along a specified axis (x, y, or z).
+    
+    Usage: OrderAlongAxis()(axis, object1, object2, ..., objectN)
+    Args:
+        axis: A string indicating the axis ('x', 'y', or 'z') to check for ordering.
+        *args: A variable number of BaseObjectState objects to be checked for ordering along the specified axis.
+    Returns:
+        bool: True if the objects are ordered along the specified axis, False otherwise.
+    """
+    
+    def __call__(self, axis, *args):
+        assert axis in {"x", "y", "z"}, "Axis must be one of 'x', 'y', or 'z'"
+        axis_index = {"x": 0, "y": 1, "z": 2}[axis]
+        
+        for i in range(len(args) - 1):
+            pos1 = args[i].get_geom_state()["pos"]
+            pos2 = args[i + 1].get_geom_state()["pos"]
+            if pos1[axis_index] >= pos2[axis_index]:
+                return False
+        return True
+    
+    def expected_arg_types(self):
+        return [str] + [BaseObjectState] * 3  # Adjust the number of BaseObjectState as needed
 
 
 class DistanceBetween(BinaryAtomic):
@@ -1362,6 +1504,35 @@ class OrientedAtDegree(UnaryAtomic):
     def expected_arg_types(self):
         return [BaseObjectState, float, float, float, float, float, float]
 
+class GetOrientation(UnaryAtomic):
+    """
+    Get the orientation of the object in the specified format.
+    
+    Args:
+        arg: The object whose orientation is being checked.
+        orient: The type of orientation to return ('roll', 'pitch', or 'yaw').
+    
+    Returns:
+        float or np.array: The orientation value(s) in the specified format.
+    """
+    def __call__(self, arg, type):
+        geom = arg.get_geom_state()
+        w, x, y, z = geom["quat"]
+        quat = np.array([x, y, z, w])
+        R = transform_utils.quat2mat(quat)
+        
+        if type == "roll":
+            return np.degrees(transform_utils.mat2euler(R)[0])
+        elif type == "pitch":
+            return np.degrees(transform_utils.mat2euler(R)[1])
+        elif type == "yaw":
+            return np.degrees(transform_utils.mat2euler(R)[2])
+        else:
+            raise ValueError("Invalid orientation type. Choose from 'roll', 'pitch', 'yaw'.")
+    
+    def expected_arg_types(self):
+        return [BaseObjectState, str]
+
 
 class PositionWithinObjectAnnulus(UnaryAtomic):
     """
@@ -1404,6 +1575,130 @@ class PositionWithinObjectAnnulus(UnaryAtomic):
 
 #     def expected_arg_types(self):
 #         return [BaseObjectState, BaseObjectState]
+
+
+class RightAngle(MultiarayAtomic):
+    """
+    Check if three objects form a right angle (90 degrees) with the middle object at the corner.
+    This predicate checks if the angle formed by the vectors from the corner object to the other two objects
+    is close to 90 degrees within a specified tolerance.
+    
+    Usage: RightAngle()(corner_object, object1, object2, tolerance_degrees)
+    Args:
+        corner_object: The object at the corner of the right angle (BaseObjectState).
+        object1: The first object forming one arm of the angle (BaseObjectState).
+        object2: The second object forming the other arm of the angle (BaseObjectState).
+        tolerance_degrees: The tolerance in degrees for the right angle check (float).
+    Returns:
+        bool: True if the angle is within tolerance_degrees of 90 degrees, False otherwise.
+    """
+    def __call__(self, corner_object, object1, object2, tolerance_degrees):
+        # Get positions in x-y plane (ignoring z for 2D angle calculation)
+        corner_pos = corner_object.get_geom_state()["pos"]
+        pos1 = object1.get_geom_state()["pos"]
+        pos2 = object2.get_geom_state()["pos"]
+        
+        # Create vectors from corner to each object (in x-y plane)
+        vec1 = np.array([pos1[0] - corner_pos[0], pos1[1] - corner_pos[1]])
+        vec2 = np.array([pos2[0] - corner_pos[0], pos2[1] - corner_pos[1]])
+        
+        # Calculate magnitudes
+        mag1 = np.linalg.norm(vec1)
+        mag2 = np.linalg.norm(vec2)
+        
+        # Avoid division by zero
+        if mag1 < 1e-6 or mag2 < 1e-6:
+            return False
+        
+        # Normalize vectors
+        vec1_norm = vec1 / mag1
+        vec2_norm = vec2 / mag2
+        
+        # Calculate dot product
+        dot_product = np.dot(vec1_norm, vec2_norm)
+        
+        # Clamp dot product to avoid numerical errors in arccos
+        dot_product = np.clip(dot_product, -1.0, 1.0)
+        
+        # Calculate angle in degrees
+        angle_rad = np.arccos(dot_product)
+        angle_deg = np.degrees(angle_rad)
+        
+        # Check if angle is within tolerance of 90 degrees
+        return abs(angle_deg - 90.0) <= tolerance_degrees
+    
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState, BaseObjectState, float]
+
+class OppositeSides(MultiarayAtomic):
+    """
+    Check if two objects are positioned on opposite sides of a third object (the divider).
+    This predicate checks if the divider object is between the two other objects along any axis,
+    indicating they are on opposite sides.
+    
+    Usage: OppositeSides()(object1, object2, divider_object)
+    Args:
+        object1: The first object (BaseObjectState).
+        object2: The second object (BaseObjectState).
+        divider_object: The object that should be between object1 and object2 (BaseObjectState).
+    Returns:
+        bool: True if the divider is between object1 and object2 along at least one axis, False otherwise.
+    """
+    def __call__(self, object1, object2, divider_object):
+        pos1 = object1.get_geom_state()["pos"]
+        pos2 = object2.get_geom_state()["pos"]
+        divider_pos = divider_object.get_geom_state()["pos"]
+        
+        # Check if divider is between object1 and object2 along any axis (x, y, or z)
+        for axis in range(3):  # x=0, y=1, z=2
+            # Check if divider position is between the two objects on this axis
+            if ((pos1[axis] <= divider_pos[axis] <= pos2[axis]) or 
+                (pos2[axis] <= divider_pos[axis] <= pos1[axis])):
+                # Also ensure the objects are actually separated (not at the same position)
+                if abs(pos1[axis] - pos2[axis]) > 0.01:  # minimum separation threshold
+                    return True
+        
+        return False
+    
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState, BaseObjectState]
+
+
+class NeuralJudge(MultiarayAtomic):
+    def __init__(self):
+        super().__init__()
+
+    def __call__(self, *args):
+        return False
+
+    def expected_arg_types(self):
+        return [str]
+
+    
+class PosiSameWith(BinaryAtomic):
+    """
+    Check if the position of an object is the same as another object within a specified threshold.
+    Usage: PosiSameWith()(arg1, arg2, axis, threshold)
+    Args:
+        arg1: The first object whose position is being checked.
+        arg2: The second object to compare against.
+        axis: A string indicating the axis ('x', 'y', or 'z') to check.
+        threshold: A float value representing the maximum allowable difference in position along the specified axis.
+    Returns:
+        bool: True if the position of arg1 along the specified axis is within the threshold of arg2's position, False otherwise.
+    """
+    def __call__(self, arg1, arg2, axis, threshold):
+        if axis not in {"x", "y", "z"}:
+            raise ValueError("Axis must be one of 'x', 'y', or 'z'")
+
+        pos1 = arg1.get_geom_state()["pos"]
+        pos2 = arg2.get_geom_state()["pos"]
+        axis_index = {"x": 0, "y": 1, "z": 2}[axis]
+        
+        return abs(pos1[axis_index] - pos2[axis_index]) <= threshold
+    
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState, str, float]
 
 class IsTouchingSideAxis(BinaryAtomic):
     """
@@ -1460,5 +1755,53 @@ class IsTouchingSideAxis(BinaryAtomic):
 
         return abs(dot_product) >= doc_product_threshold
 
+
     def expected_arg_types(self):
         return [BaseObjectState, BaseObjectState, str, float]
+class YawAngleAligned(BinaryAtomic):
+    """
+    Check if the yaw (rotation around z-axis) of two objects are aligned within a specified threshold (in degrees),
+    after applying an offset to the second object's yaw.
+
+    Usage: YawAngleAligned()(obj1, obj2, yaw_thresh, yaw_offset)
+    Arguments:
+    - obj1: The first object.
+    - obj2: The second object.
+    - yaw_thresh: Allowed deviation for yaw in degrees.
+    - yaw_offset: Offset (in degrees) to apply to obj2's yaw before comparison.
+
+    Returns:
+    - True if the absolute difference of yaw (with offset) is within its threshold (using acute angle).
+    """
+    def __call__(self, obj1, obj2, yaw_thresh, yaw_offset):
+        geom1 = obj1.get_geom_state()
+        geom2 = obj2.get_geom_state()
+        w1, x1, y1, z1 = geom1["quat"]
+        w2, x2, y2, z2 = geom2["quat"]
+        quat1 = np.array([x1, y1, z1, w1])
+        quat2 = np.array([x2, y2, z2, w2])
+        R1 = transform_utils.quat2mat(quat1)
+        R2 = transform_utils.quat2mat(quat2)
+        _, _, yaw1 = transform_utils.mat2euler(R1)
+        _, _, yaw2 = transform_utils.mat2euler(R2)
+        # Convert to degrees
+        yaw1 = np.degrees(yaw1)
+
+        def clamp_angle(angle):
+            """Clamp any angle to the range [-180, 180] degrees."""
+            return ((angle % 360) + 180) % 360 - 180
+
+        yaw2 = clamp_angle(np.degrees(yaw2) + yaw_offset)
+
+        def acute_diff(a, b):
+            diff = abs(a - b)
+            if diff > 180:
+                diff = 360 - diff
+            return diff
+
+        within_yaw = acute_diff(yaw1, yaw2) <= yaw_thresh
+        return within_yaw
+
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState, float, float]
+

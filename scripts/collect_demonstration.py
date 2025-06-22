@@ -6,6 +6,8 @@ import init_path
 import json
 import numpy as np
 import os
+import cv2
+import re
 import robosuite as suite
 import time
 from glob import glob
@@ -16,10 +18,17 @@ from robosuite.utils.input_utils import input2action
 
 import libero.libero.envs.bddl_utils as BDDLUtils
 from libero.libero.envs import *
+from scripts.llm_judge import LLMJudge
 
+llm_judge = LLMJudge(
+    provider="openai",  # or "openai"
+    model_name="o4-mini",  # or "us.anthropic.claude-sonnet-4-20250514-v1:0"
+)
 
 def collect_human_trajectory(
-    env, device, arm, env_configuration, problem_info, remove_directory=[]
+    env, device, arm, env_configuration, problem_info, remove_directory=[], 
+    sample=False, ep_image_directory=None, neural_task=None,
+    n_images=10, sample_freq=150, sample_width=960, sample_height=512
 ):
     """
     Use the device (keyboard or SpaceNav 3D mouse) to collect a demonstration.
@@ -44,17 +53,25 @@ def collect_human_trajectory(
     # ID = 2 always corresponds to agentview
     env.render()
 
-    task_completion_hold_count = (
-        -1
-    )  # counter to collect 10 timesteps after reaching goal
+    task_completion_hold_count = -1  # counter to collect 10 timesteps after reaching goal
     device.start_control()
 
     # Loop until we get a reset from the input or the task completes
     saving = True
     count = 0
+    step_count = 0
+
+    # prepare image directory if sampling
+    if sample and ep_image_directory is not None:
+        os.makedirs(ep_image_directory, exist_ok=True)
+        # Save initial image (step 0)
+        obs = np.flipud(env.sim.render(camera_name="agentview", width=sample_width, height=sample_height))
+        cv2.imwrite(os.path.join(ep_image_directory, f"step_{step_count:04d}.png"), obs[..., ::-1])
 
     while True:
         count += 1
+        step_count += 1
+
         # Set active robot
         active_robot = (
             env.robots[0]
@@ -74,14 +91,28 @@ def collect_human_trajectory(
         if action is None:
             print("Break")
             saving = False
+            # Save final image if sampling
+            if sample and ep_image_directory is not None:
+                obs = np.flipud(env.sim.render(camera_name="agentview", width=sample_width, height=sample_height))
+                cv2.imwrite(os.path.join(ep_image_directory, f"step_{step_count:04d}_final.png"), obs[..., ::-1])
+                if env._check_success_without_neuraljudge():
+                    saving = True
             break
 
         # Run environment step
-
         env.step(action)
         env.render()
-        # Also break if we complete the task
+
+        # sample image at given frequency
+        if sample and ep_image_directory is not None and (step_count % sample_freq == 0):
+            obs = np.flipud(env.sim.render(camera_name="agentview", width=sample_width, height=sample_height))
+            cv2.imwrite(os.path.join(ep_image_directory, f"step_{step_count:04d}.png"), obs[..., ::-1])
+
         if task_completion_hold_count == 0:
+        #     # Save final image if sampling
+        #     if sample and ep_image_directory is not None:
+        #         obs = np.flipud(env.sim.render(camera_name="agentview", width=sample_width, height=sample_height))
+        #         cv2.imwrite(os.path.join(ep_image_directory, f"step_{step_count:04d}_final.png"), obs[..., ::-1])
             break
 
         # state machine to check for having a success for 10 consecutive timesteps
@@ -93,7 +124,21 @@ def collect_human_trajectory(
         else:
             task_completion_hold_count = -1  # null the counter if there's no success
 
-    print(count)
+    if sample:
+        success, result = llm_judge.judge_directory(
+            image_directory=ep_image_directory,
+            task_description=neural_task,
+            n_images=n_images,
+        )
+
+        print("LLM judges the task as: ", "Succeeded" if success else "Failed")
+        print("Reason: \n", re.sub(r'(\r?\n){2,}', r'\n', result))
+        print("--------------- END OF THINKING ---------------")
+
+        saving = saving and success
+        # print("symbolic: ", saving)
+        # print("neural: ", success)
+
     # cleanup for end of data collection episodes
     if not saving:
         remove_directory.append(env.ep_directory.split("/")[-1])
@@ -269,8 +314,20 @@ if __name__ == "__main__":
 
     assert os.path.exists(args.bddl_file)
     problem_info = BDDLUtils.get_problem_info(args.bddl_file)
-    # Check if we're using a multi-armed environment and use env_configuration argument if so
 
+    # Check if neural judge is enabled
+    parsed_problem_info = BDDLUtils.robosuite_parse_problem(args.bddl_file)
+
+    neural_task = None
+    for item in parsed_problem_info["goal_state"]:
+        if isinstance(item, list) and item and item[0] == "neuraljudge":
+            sample = True
+            neural_task = " ".join(item[1:])
+            break
+    
+    # print(neural_task)
+    
+    # Check if we're using a multi-armed environment and use env_configuration argument if so
     # Create environment
     problem_name = problem_info["problem_name"]
     domain_name = problem_info["domain_name"]
@@ -298,6 +355,12 @@ if __name__ == "__main__":
 
     # wrap the environment with data collection wrapper
     tmp_directory = "demonstration_data/tmp/{}_ln_{}/{}".format(
+        problem_name,
+        language_instruction.replace(" ", "_").strip('""'),
+        str(time.time()).replace(".", "_"),
+    )
+
+    image_directory = "demonstration_data/images/{}_ln_{}/{}".format(
         problem_name,
         language_instruction.replace(" ", "_").strip('""'),
         str(time.time()).replace(".", "_"),
@@ -350,14 +413,22 @@ if __name__ == "__main__":
 
     remove_directory = []
     i = 0
+    ep = 0
     while i < args.num_demonstration:
-        print(i)
+        success_rate = i / ep if ep > 0 else 0
+        print(f"# of completed trials: {ep},  # of successes: {i}, success rate: {success_rate:.2f}")
+        ep_image_directory = os.path.join(
+            image_directory, f"ep_{ep:04d}"
+        )
         saving = collect_human_trajectory(
-            env, device, args.arm, args.config, problem_info, remove_directory
+            env, device, args.arm, args.config, problem_info, remove_directory, 
+            sample, ep_image_directory, neural_task,
+            n_images=10, sample_freq=150, sample_width=960, sample_height=512
         )
         if saving:
-            print(remove_directory)
+            # print(remove_directory)
             gather_demonstrations_as_hdf5(
                 tmp_directory, new_dir, env_info, args, remove_directory
             )
             i += 1
+        ep += 1

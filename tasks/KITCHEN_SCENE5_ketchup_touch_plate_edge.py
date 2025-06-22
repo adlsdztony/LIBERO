@@ -12,7 +12,7 @@ def main():
         objects_of_interest=["ketchup_1", "plate_1"],
         goal_states=[
             ("InContact", "ketchup_1", "plate_1"),  # Bottle must touch the plate
-            ("Not", ("On", "ketchup_1", "plate_1")),  # Bottle must not be on top of the plate
+            ("Not", ("RelaxedOn", "ketchup_1", "plate_1")),  # Bottle must not be on top of the plate
         ],
     )
     bddl, _ = generate_bddl_from_task_info()
