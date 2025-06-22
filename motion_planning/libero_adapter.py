@@ -27,8 +27,18 @@ class LiberoMPLibAdapter:
         mplib_quat = [w, x, y, z]
         return mplib_quat
 
-    def set_base_pose(self, base_pose):
-        pass
+    def set_base_pose(self, base_pos, base_quat):
+        """
+        Set the base pose for the planner
+        
+        Args:
+            base_pos: Base position as [x, y, z]
+            base_quat: Base orientation as [qx, qy, qz, qw]
+        """
+        mplib_quat = self.libero_to_mplib_quaternion(base_quat)
+        base_pose = Pose(base_pos, mplib_quat)
+        self.planner.set_base_pose(base_pose)
+
 
     def get_current_joint_positions(self, obs):
         """
@@ -41,6 +51,18 @@ class LiberoMPLibAdapter:
             np.ndarray: Current joint positions (7 elements for Panda)
         """
         return obs['robot0_joint_pos']
+
+    def get_gripper_joint_positions(self, obs):
+        """
+        Extract gripper joint positions from LIBERO observation
+        
+        Args:
+            obs: Observation dict from env.step() or env.reset()
+            
+        Returns:
+            np.ndarray: Gripper joint positions (2 elements for Panda)
+        """
+        return obs['robot0_gripper_qpos']
     
     def get_fk_ee_pose(self, joint_positions):
         """

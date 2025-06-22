@@ -54,30 +54,25 @@ def collect_scripted_trajectory(
     for _ in range(num_stabilize_steps):
         obs, _, _, _ = env.step(empty_action)
         current_joints = planner.get_current_joint_positions(obs)
-        planner_ee_pose = planner.planner.get_current_end_effector_pose(current_joints)
-        # print(f"Stabilizing: {planner_ee_pose}")
+        current_gripper = planner.get_gripper_joint_positions(obs)
         env.render()
 
     while pose_index < len(target_poses):
         # Get current joint positions from observation
         current_joints = planner.get_current_joint_positions(obs)
+        current_gripper = planner.get_gripper_joint_positions(obs)
 
         # Get target pose
-        target_pose = target_poses[pose_index]
-        print(f"Planning to pose {pose_index + 1}/{len(target_poses)}: {target_pose}")
+        pos, quat = target_poses[pose_index]
+        print(f"Index {pose_index + 1}/{len(target_poses)}: Planning to {pos} {quat}")
 
-        # Plan trajectory to target pose
-        pos, quat = target_pose
-        result = planner.plan_to_pose(pos, quat, current_joints, use_screw=True)
-
+        # Plan trajectory to target pose using RRTConnect
+        # result = planner.plan_to_pose(pos, quat, current_joints, use_screw=True)
+        result = planner.plan_to_pose(pos, quat, np.concatenate((current_joints, current_gripper)), use_screw=False)
         if result["status"] != "Success":
-            print(f"Planning failed with status: {result['status']}")
-            # Try with RRT planner
-            result = planner.plan_to_pose(pos, quat, current_joints, use_screw=False)
-            if result["status"] != "Success":
-                print("RRT planning also failed, skipping this pose")
-                pose_index += 1
-                continue
+            print("RRT planning also failed, skipping this pose")
+            pose_index += 1
+            continue
 
         # Append several duplicate steps to hold the pose
         duplicate_steps = 50
@@ -87,7 +82,7 @@ def collect_scripted_trajectory(
         )
         # Execute the planned trajectory
         n_steps = result["position"].shape[0]
-        print(f"Executing trajectory with {n_steps} steps")
+        # print(f"Executing trajectory with {n_steps} steps")
 
         for i in range(n_steps):
             count += 1
@@ -100,14 +95,15 @@ def collect_scripted_trajectory(
             action = np.zeros(8)
             action[:7] = planned_joints - current_joints
             action[7] = gripper[pose_index]  # Set gripper action
-            print(f"Action to take: {[f'{a:.3f}' for a in action]}")
+            # print(f"Action to take: {[f'{a:.3f}' for a in action]}")
             
             # Step the environment
             obs, reward, done, info = env.step(action)
             if count % 30 == 0:
                 ee_pos = obs["robot0_eef_pos"]
                 ee_quat = obs["robot0_eef_quat"]
-                print("[{:.3f}, {:.3f}, {:.3f}]".format(*ee_pos), "[{:.3f}, {:.3f}, {:.3f}, {:.3f}]".format(*ee_quat))
+                # print("[{:.3f}, {:.3f}, {:.3f}]".format(*ee_pos), "[{:.3f}, {:.3f}, {:.3f}, {:.3f}]".format(*ee_quat))
+                # print(obs)
             env.render()
 
             # Check for task completion
@@ -127,6 +123,10 @@ def collect_scripted_trajectory(
 
             time.sleep(0.01)
 
+        ee_pos = obs["robot0_eef_pos"]
+        ee_quat = obs["robot0_eef_quat"]
+        print("Libero Current EE Pose [{:.3f}, {:.3f}, {:.3f}]".format(*ee_pos), "[{:.3f}, {:.3f}, {:.3f}, {:.3f}]\n".format(*ee_quat))
+
         # Move to next pose
         pose_index += 1
         
@@ -145,24 +145,25 @@ def collect_scripted_trajectory(
 
 
 def get_scripted_poses_for_task(problem_name, language_instruction):
-    KITCHEN_SCENE_ROBOT_POS_OFFSET = [-0.66, 0, 0.81]
-    robot_pos_offset = KITCHEN_SCENE_ROBOT_POS_OFFSET
     poses = [
-        [[0.038, 0.048, 1.049], [1.000, 0.000, -0.028, 0.000]],
-        [[0.036, 0.051, 0.934], [1.000, 0.000, -0.028, -0.000]],
-        [[0.036, 0.051, 0.934], [1.000, 0.000, -0.028, -0.000]],
-        [[0.042, 0.048, 1.080], [1.000, 0.000, -0.029, 0.000]]
+        # [[0.038, 0.048, 1.049], [1.000, 0.000, -0.028, 0.000]],
+        # [[0.036, 0.051, 0.934], [1.000, 0.000, -0.028, -0.000]],
+        # [[0.036, 0.051, 0.934], [1.000, 0.000, -0.028, -0.000]],
+        # [[0.042, 0.048, 1.080], [1.000, 0.000, -0.029, 0.000]]
+
+        [[0.0219382, 0.0780828, 1.0067487], [0.9995958, 0.0002424, -0.0284270, -0.0000250]],
+        [[0.0240333, 0.0813473, 0.9187534], [0.9995953, 0.0001911, -0.0284460, 0.0001350]],
+        [[0.0240333, 0.0813473, 0.9187534], [0.9995953, 0.0001911, -0.0284460, 0.0001350]],
+        [[0.0414913, 0.2660626, 0.9825765], [0.9995826, 0.0002256, -0.0288904, -0.0000298]],
+        [[0.0414913, 0.2660626, 0.9825765], [0.9995826, 0.0002256, -0.0288904, -0.0000298]],
     ]
     gripper = [
         -1,
         0,
         1,
         1,
+        -1,
     ]
-    for pose in poses:
-        pose[0][0] -= robot_pos_offset[0]
-        pose[0][1] -= robot_pos_offset[1]
-        pose[0][2] -= robot_pos_offset[2]
 
     print(f"Using {len(poses)} scripted poses for task: {language_instruction}")
     return poses, gripper
@@ -351,9 +352,9 @@ if __name__ == "__main__":
         exit(1)
 
     # Set the transform from the world to the robot base
-    # KITCHEN_SCENE_ROBOT_POS_OFFSET = [-0.66, 0, 0.81]
-    # robot_base_pose = KITCHEN_SCENE_ROBOT_POS_OFFSET + [1, 0, 0, 0]
-    # planner.set_base_pose(robot_base_pose)
+    # TODO: Get precise transform according to problem name
+    KITCHEN_SCENE_ROBOT_BASE_POS = [-0.66, 0, 0.81]
+    planner.set_base_pose(KITCHEN_SCENE_ROBOT_BASE_POS, [0, 0, 0, 1])
 
     # Get scripted poses for this task
     target_poses, gripper = get_scripted_poses_for_task(problem_name, language_instruction)
