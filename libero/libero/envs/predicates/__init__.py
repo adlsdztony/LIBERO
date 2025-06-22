@@ -55,12 +55,16 @@ VALIDATE_PREDICATE_FN_DICT = {
     "rightangle": RightAngle(),
     "oppositesides": OppositeSides(),
     "getorientation": GetOrientation(),
+    "yawanglealigned": YawAngleAligned(),
+    "axisalignedwithinworldaxis": AxisAlignedWithinWorldAxis(),
+    "midbetweenanydirection": MidBetweenAnyDirection(),
     "posisamewith": PosiSameWith(),
     "orderalongaxis": OrderAlongAxis(),
     "midbetween": MidBetween(),
     "relaxedmidbetween": RelaxedMidBetween(),
     "axisalignedwithinworldaxis": AxisAlignedWithinWorldAxis(),
     "istouchingsideaxis": IsTouchingSideAxis(),
+    "axisalignedwithinobjectaxis": AxisAlignedWithinObjectAxis(),
     "neuraljudge": NeuralJudge(),
 }
 

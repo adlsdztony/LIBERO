@@ -319,6 +319,7 @@ if __name__ == "__main__":
     parsed_problem_info = BDDLUtils.robosuite_parse_problem(args.bddl_file)
 
     neural_task = None
+    sample = False
     for item in parsed_problem_info["goal_state"]:
         if isinstance(item, list) and item and item[0] == "neuraljudge":
             sample = True
