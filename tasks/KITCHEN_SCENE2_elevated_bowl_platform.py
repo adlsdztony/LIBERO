@@ -6,7 +6,6 @@ from libero.libero.benchmark.mu_creation import KitchenScene2
 
 
 def order(x, y, z):
-    """x, y 作为桥墩，z 作为桥面"""
     return (
         "And",
         (
