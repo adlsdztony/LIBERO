@@ -327,7 +327,7 @@ goal_states = [
 ]
 ```
 
-### Sequencial
+### Sequential
 You can define sequential tasks using the `Sequential` predicate. This allows you to specify a sequence of conditions that must be met in order, enabling more complex task structures.
 ```python
 ("Sequential", (
