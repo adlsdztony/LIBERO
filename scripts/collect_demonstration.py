@@ -20,11 +20,6 @@ import libero.libero.envs.bddl_utils as BDDLUtils
 from libero.libero.envs import *
 from scripts.llm_judge import LLMJudge
 
-llm_judge = LLMJudge(
-    provider="openai",  # or "openai"
-    model_name="o4-mini",  # or "us.anthropic.claude-sonnet-4-20250514-v1:0"
-)
-
 def collect_human_trajectory(
     env, device, arm, env_configuration, problem_info, remove_directory=[], 
     sample=False, ep_image_directory=None, neural_task=None,
@@ -125,6 +120,10 @@ def collect_human_trajectory(
             task_completion_hold_count = -1  # null the counter if there's no success
 
     if sample:
+        llm_judge = LLMJudge(
+            provider="openai",  # or "openai"
+            model_name="o4-mini",  # or "us.anthropic.claude-sonnet-4-20250514-v1:0"
+        )
         success, result = llm_judge.judge_directory(
             image_directory=ep_image_directory,
             task_description=neural_task,

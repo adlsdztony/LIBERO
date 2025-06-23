@@ -326,3 +326,25 @@ goal_states = [
     ("ConstraintNever", ("InContact", "akita_black_bowl_1", "plate_1")),
 ]
 ```
+
+### Sequential
+You can define sequential tasks using the `Sequential` predicate. This allows you to specify a sequence of conditions that must be met in order, enabling more complex task structures.
+```python
+("Sequential", (
+    ("All", (
+        ("Close", "wooden_cabinet_1_middle_region"),
+        ("Not", ("InContact", "akita_black_bowl_1", "plate_1")),
+    )),
+    ("All", (
+        ("InContact", "akita_black_bowl_1", "plate_1"),
+        ("ConstraintAlways", ("Upright", "akita_black_bowl_1")),
+    ))
+))
+```
+For this example, the first condition requires the cabinet to be closed and the bowl not to be in contact with the plate. Only after the first condition is satisfied, the second condition will be checked, which requires the bowl to be in contact with the plate and remain upright.
+
+### Watch
+The `Watch` predicate allows you to monitor a specific predicate condition throughout the task execution. It always returns `True` and is useful for tracking conditions without affecting task success.
+```python
+("Watch", ("InContact", "gripper0_finger1", "akita_black_bowl_1"))
+```
