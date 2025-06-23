@@ -73,6 +73,7 @@ class KitchenScene4(InitialSceneTemplates):
         return states
 
 def main():
+    # somehow worked
     scene_name = "kitchen_scene4"
     language = "Place the wine bottle on the top of the cabinet. The gripper should grasp the wine bottle by its neck."
     register_task_info(

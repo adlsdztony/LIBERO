@@ -55,13 +55,13 @@ class LivingRoomScene1(InitialSceneTemplates):
 def main():
     # failed
     scene_name = "living_room_scene1"
-    language = "Use the gripper to push the basket for a certain distance"
+    language = "Rotate the basket 90 degrees counter-clockwise so that its opening points to the left side of the camera"
     register_task_info(
         language,
         scene_name=scene_name,
         objects_of_interest=["basket_1"],
         goal_states=[
-            ("NeuralJudge", "The gripper pushes, instead of picking up, the basket for a certain distance."),
+            ("NeuralJudge", "Rotate the basket 90 degrees counter-clockwise so that its opening points to the left side of the camera"),
         ],
     )
 
