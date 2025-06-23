@@ -13,7 +13,6 @@ import time
 from glob import glob
 from robosuite import load_controller_config
 from robosuite.wrappers import DataCollectionWrapper, VisualizationWrapper
-from robosuite.utils.input_utils import input2action
 
 import libero.libero.envs.bddl_utils as BDDLUtils
 from libero.libero.envs import *
@@ -28,7 +27,7 @@ def collect_scripted_trajectory(
     env, planner, target_joint_positions, target_grippers, remove_directory=[]
 ):
     """
-    Simple joint position tracking demonstration collection.
+    Simple joint position tracking demonstration collection using waypoints.
     """
 
     reset_success = False
@@ -46,7 +45,7 @@ def collect_scripted_trajectory(
     count = 0
     joint_index = 0
 
-    print(f"Starting joint position tracking with {len(target_joint_positions)} target joint positions")
+    print(f"🤖 Starting automated trajectory with {len(target_joint_positions)} waypoints")
 
     # Run multiple empty actions to ensure the arm is stable
     empty_action = np.zeros(8)
@@ -66,7 +65,9 @@ def collect_scripted_trajectory(
         target_joints = target_joint_positions[joint_index]
         target_gripper = target_grippers[joint_index]
 
-        print(f"Index {joint_index + 1}/{len(target_joint_positions)}: Planning to joint positions and gripper {target_joints} {target_gripper}")
+        print(f"📍 Waypoint {joint_index + 1}/{len(target_joint_positions)}: Moving to joint configuration")
+        print(f"   Target joints: {[f'{x:.3f}' for x in target_joints]}")
+        print(f"   Target gripper: {target_gripper}")
 
         # Plan trajectory to target joint position using motion planner
         result = planner.planner.plan_qpos(
@@ -79,10 +80,9 @@ def collect_scripted_trajectory(
             verbose=False
         )
         if result["status"] != "Success":
-            print(f"Motion planning failed: {result['status']}, skipping this joint position")
+            print(f"❌ Motion planning failed: {result['status']}, skipping this waypoint")
             joint_index += 1
             continue
-
 
         # Add several duplicate steps to hold the final position
         duplicate_steps = 20
@@ -96,7 +96,7 @@ def collect_scripted_trajectory(
         
         # Execute the planned joint trajectory
         total_steps = result["position"].shape[0]
-        print(f"Executing planned joint trajectory with {total_steps} steps")
+        print(f"   Executing trajectory with {total_steps} steps")
 
         for i in range(total_steps):
             count += 1
@@ -105,7 +105,6 @@ def collect_scripted_trajectory(
             planned_joints = result["position"][i]
             current_joints = planner.get_current_joint_positions(obs)
             joint_error = planned_joints - current_joints
-            # print(f"Joint error: {joint_error}")
 
             step = 3
             
@@ -113,19 +112,14 @@ def collect_scripted_trajectory(
                 action = np.zeros(8)
                 action[:7] = joint_error  # Joint position control
                 action[7] = target_gripper  # Set gripper action
-                # print(f"Action to take: {[f'{a:.3f}' for a in action]}")
                 
                 # Step the environment
                 obs, reward, done, info = env.step(action)
-                if count % 30 == 0:
-                    current_joints_display = planner.get_current_joint_positions(obs)
-                    # print(f"Current joints: {[f'{j:.3f}' for j in current_joints_display]}")
-                    # print(f"Planned joints: {[f'{j:.3f}' for j in planned_joints]}")
                 env.render()
 
             # Check for task completion
             if task_completion_hold_count == 0:
-                print("Task completed!")
+                print("🎯 Task completed!")
                 break
 
             # State machine to check for having a success for 10 consecutive timesteps
@@ -134,7 +128,7 @@ def collect_scripted_trajectory(
                     task_completion_hold_count -= 1
                 else:
                     task_completion_hold_count = 10
-                    print("Task success detected, holding for 10 timesteps")
+                    print("✅ Task success detected, holding for 10 timesteps")
             else:
                 task_completion_hold_count = -1
 
@@ -143,8 +137,7 @@ def collect_scripted_trajectory(
         # Calculate final joint error
         final_joints = planner.get_current_joint_positions(obs)
         joint_error_final = target_joints - final_joints
-        print(f"Final joint error: {[f'{e:.3f}' for e in joint_error_final]}")
-        print(f"Final joint positions: {[f'{j:.3f}' for j in final_joints]}\n")
+        print(f"   Final joint error: {[f'{e:.3f}' for e in joint_error_final]}")
 
         # Move to next joint target
         joint_index += 1
@@ -153,7 +146,7 @@ def collect_scripted_trajectory(
         if task_completion_hold_count == 0:
             break
 
-    print(f"Total steps: {count}")
+    print(f"🏁 Automation completed with {count} total steps")
     
     # cleanup for end of data collection episodes
     if not saving:
@@ -163,36 +156,120 @@ def collect_scripted_trajectory(
     return saving
 
 
-def get_scripted_joint_positions_for_task(problem_name, language_instruction):
+def load_waypoints_from_hdf5(waypoints_file):
     """
-    Define target joint positions for different tasks.
-    Each joint position should be a 7-element array for the 7 DOF Panda arm.
-    Joint limits (approximate):
-    - Joint 1: [-2.9, 2.9] rad
-    - Joint 2: [-1.8, 1.8] rad  
-    - Joint 3: [-2.9, 2.9] rad
-    - Joint 4: [-3.1, 0.0] rad
-    - Joint 5: [-2.9, 2.9] rad
-    - Joint 6: [-0.0, 3.8] rad
-    - Joint 7: [-2.9, 2.9] rad
+    Load waypoints from HDF5 file created by collect_waypoints.py
+    
+    Args:
+        waypoints_file (str): Path to the waypoints HDF5 file
+        
+    Returns:
+        dict: Dictionary containing waypoint data for all demonstrations
     """
+    waypoints_data = {}
     
-    # Example joint positions - you should modify these based on your specific task
-    joint_positions = [
-        np.array([0.1079018, 0.8464436, 0.0209961, -1.6045612, -0.2262161, 2.3636613, 1.0807042]),
-        np.array([0.1079018, 0.8464436, 0.0209961, -1.6045612, -0.2262161, 2.3636613, 1.0807042]),
-
-        np.array([0.3185039, 0.9802151, 0.1630616, -1.2502969, -0.2878828, 2.0901459, 1.3674673]),
-        np.array([0.3185039, 0.9802151, 0.1630616, -1.2502969, -0.2878828, 2.0901459, 1.3674673]),
-
-    ]
+    try:
+        with h5py.File(waypoints_file, "r") as f:
+            print(f"📁 HDF5 file opened successfully: {waypoints_file}")
+            print(f"📁 Root keys: {list(f.keys())}")
+            
+            if "data" not in f:
+                print("❌ No 'data' group found in HDF5 file")
+                return {"demonstrations": []}
+                
+            data_group = f["data"]
+            print(f"📁 Data group keys: {list(data_group.keys())}")
+            
+            # Load metadata
+            waypoints_data["metadata"] = {
+                "date": data_group.attrs.get("date", ""),
+                "time": data_group.attrs.get("time", ""),
+                "problem_info": json.loads(data_group.attrs.get("problem_info", "{}")),
+                "bddl_file_name": data_group.attrs.get("bddl_file_name", ""),
+            }
+            
+            # Load all demonstrations
+            waypoints_data["demonstrations"] = []
+            demo_keys = [key for key in data_group.keys() if key.startswith("demo_")]
+            print(f"📁 Found demo keys: {demo_keys}")
+            
+            if not demo_keys:
+                print("❌ No demonstration keys found (keys starting with 'demo_')")
+                return waypoints_data
+            
+            for demo_key in sorted(demo_keys):
+                demo_group = data_group[demo_key]
+                demo_datasets = list(demo_group.keys())
+                print(f"📁 {demo_key} datasets: {demo_datasets}")
+                
+                demo_data = {
+                    "joint_positions": np.array(demo_group["joint_positions"]),
+                    "ee_pos_quat": np.array(demo_group["ee_pos_quat"]),
+                    "gripper_commands": np.array(demo_group.get("gripper_commands", demo_group.get("gripper_pos", []))),
+                }
+                print(f"📁 {demo_key} waypoint shapes: joint_positions={demo_data['joint_positions'].shape}, "
+                      f"ee_pos_quat={demo_data['ee_pos_quat'].shape}, gripper_commands={demo_data['gripper_commands'].shape}")
+                waypoints_data["demonstrations"].append(demo_data)
+            
+            print(f"✅ Successfully loaded {len(waypoints_data['demonstrations'])} demonstrations")
     
-    # Gripper states corresponding to each joint position
-    # -1: open, 1: closed
-    gripper = [-1, 1, 1, -1]
+    except Exception as e:
+        print(f"❌ Error loading waypoints file: {e}")
+        return {"demonstrations": []}
+    
+    return waypoints_data
 
-    print(f"Using {len(joint_positions)} target joint positions for task: {language_instruction}")
-    return joint_positions, gripper
+
+def find_waypoints_file(waypoints_directory, problem_name, language_instruction):
+    """
+    Find the most recent waypoints file for the given task.
+    
+    Args:
+        waypoints_directory (str): Directory containing waypoint files
+        problem_name (str): Problem name
+        language_instruction (str): Language instruction
+        
+    Returns:
+        str: Path to the waypoints file, or None if not found
+    """
+    if not os.path.exists(waypoints_directory):
+        print(f"⚠️ Waypoints directory does not exist: {waypoints_directory}")
+        return None
+    
+    # Look for directories matching the pattern
+    instruction_slug = language_instruction.replace(" ", "_").strip('""')
+    
+    matching_dirs = []
+    for item in os.listdir(waypoints_directory):
+        item_path = os.path.join(waypoints_directory, item)
+        if os.path.isdir(item_path):
+            # Check if directory name contains both problem name and instruction
+            if problem_name in item and instruction_slug in item:
+                matching_dirs.append(item_path)
+    
+    if not matching_dirs:
+        print(f"⚠️ No matching waypoint directories found")
+        print(f"   Problem: {problem_name}")
+        print(f"   Instruction: {instruction_slug}")
+        print(f"   Available directories in {waypoints_directory}:")
+        try:
+            for item in os.listdir(waypoints_directory):
+                if os.path.isdir(os.path.join(waypoints_directory, item)):
+                    print(f"     - {item}")
+        except:
+            print(f"     (could not list directory)")
+        return None
+    
+    # Find the most recent directory (sort by modification time)
+    latest_dir = max(matching_dirs, key=lambda x: os.path.getmtime(x))
+    
+    # Look for waypoints.hdf5 file in the directory
+    waypoints_file = os.path.join(latest_dir, "waypoints.hdf5")
+    if os.path.exists(waypoints_file):
+        return waypoints_file
+    
+    print(f"⚠️ waypoints.hdf5 not found in {latest_dir}")
+    return None
 
 
 def gather_demonstrations_as_hdf5(
@@ -264,18 +341,31 @@ def gather_demonstrations_as_hdf5(
 
 if __name__ == "__main__":
     # Arguments
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Auto collect demonstrations using waypoints")
+    parser.add_argument(
+        "--bddl-file", 
+        type=str, 
+        default="libero/libero/bddl_files/libero_90/KITCHEN_SCENE1_open_the_bottom_drawer_of_the_cabinet.bddl",
+        help="BDDL task file (default: kitchen drawer opening task)"
+    )
     parser.add_argument(
         "--directory",
         type=str,
-        default="demonstration_data",
+        default="demonstration_data/auto_demo",
+        help="Output directory for demonstrations"
     )
     parser.add_argument(
-        "--robots",
-        nargs="+",
+        "--waypoints-directory",
         type=str,
-        default="Panda",
-        help="Which robot(s) to use in the env",
+        default="demonstration_data/waypoints",
+        help="Directory containing waypoint files"
+    )
+    parser.add_argument(
+        "--waypoint-type",
+        type=str,
+        default="joint_position",
+        choices=["joint_position"],
+        help="Type of waypoints to use (only joint_position supported for now)"
     )
     parser.add_argument(
         "--config",
@@ -298,10 +388,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--num-demonstration",
         type=int,
-        default=10,
+        default=5,
         help="Number of demonstrations to collect",
     )
-    parser.add_argument("--bddl-file", type=str, required=True)
     
     # Motion planning specific arguments
     parser.add_argument(
@@ -319,17 +408,19 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # Get controller config
+    # Fixed robot configuration for auto collection
+    robots = ["Panda"]
+    
+    # Get controller config (JOINT_POSITION for automation)
     controller_config = load_controller_config(default_controller="JOINT_POSITION")
     controller_config["kp"] = 300.0
     controller_config["damping_ratio"] = 0.8
     controller_config["output_max"] = 0.5
     controller_config["output_min"] = -0.5
-    # print("Controller config", controller_config)
 
     # Create argument configuration
     config = {
-        "robots": args.robots,
+        "robots": robots,
         "controller_configs": controller_config,
     }
 
@@ -344,7 +435,51 @@ if __name__ == "__main__":
     if "TwoArm" in problem_name:
         config["env_configuration"] = args.config
     
-    print(f"Task: {language_instruction}")
+    print(f"🎯 Task: {language_instruction}")
+    
+    # Find waypoints file
+    waypoints_file = find_waypoints_file(args.waypoints_directory, problem_name, language_instruction)
+    if not waypoints_file:
+        print(f"❌ No waypoints file found for task: {language_instruction}")
+        print(f"   Searched in: {args.waypoints_directory}")
+        print(f"   Expected pattern: *{problem_name}*{language_instruction.replace(' ', '_')}*/waypoints.hdf5")
+        exit(1)
+    
+    print(f"📁 Using waypoints from: {waypoints_file}")
+    
+    # Load waypoints
+    waypoints_data = load_waypoints_from_hdf5(waypoints_file)
+    if not waypoints_data["demonstrations"]:
+        print("❌ No waypoint demonstrations found in file")
+        exit(1)
+    
+    # Use the first demonstration's waypoints (you could extend this to use all)
+    demo_waypoints = waypoints_data["demonstrations"][0]
+    target_joint_positions = demo_waypoints["joint_positions"]
+    
+    # Convert gripper commands to robot actions
+    # gripper_commands contains True (close) or False (open)
+    target_grippers = []
+    if "gripper_commands" in demo_waypoints:
+        # New format: direct boolean commands
+        for gripper_command in demo_waypoints["gripper_commands"]:
+            target_grippers.append(1 if gripper_command else -1)  # 1=close, -1=open
+        print(f"📍 Using new gripper command format")
+    elif "gripper_pos" in demo_waypoints:
+        # Legacy format: convert from positions
+        print(f"📍 Converting from legacy gripper position format")
+        gripper_threshold = 0.02
+        for gripper_pos in demo_waypoints["gripper_pos"]:
+            # Average gripper position (both fingers)
+            avg_gripper_pos = np.mean(gripper_pos)
+            target_grippers.append(-1 if avg_gripper_pos > gripper_threshold else 1)
+    else:
+        print("❌ No gripper data found in waypoints")
+        exit(1)
+    
+    print(f"📍 Loaded {len(target_joint_positions)} waypoints from demonstration")
+    print(f"🤏 Gripper commands: {['CLOSE' if cmd == 1 else 'OPEN' for cmd in target_grippers]}")
+    print(f"💾 Demonstrations will be saved to: {args.directory}")
     
     env = TASK_MAPPING[problem_name](
         bddl_file_name=args.bddl_file,
@@ -371,34 +506,33 @@ if __name__ == "__main__":
             srdf_path=args.srdf_path,
             move_group="panda_hand"
         )
-        print("Motion planner initialized successfully")
+        print("🤖 Motion planner initialized successfully")
     except Exception as e:
-        print(f"Failed to initialize motion planner: {e}")
+        print(f"❌ Failed to initialize motion planner: {e}")
         print("Please check URDF/SRDF paths and ensure mplib is installed")
         exit(1)
 
     # Set the transform from the world to the robot base
-    # TODO: Get precise transform according to problem name
     KITCHEN_SCENE_ROBOT_BASE_POS = [-0.66, 0, 0.804]
     planner.set_base_pose(KITCHEN_SCENE_ROBOT_BASE_POS, [0, 0, 0, 1])
 
-    # Get scripted joint positions for this task
-    target_joint_positions, target_grippers = get_scripted_joint_positions_for_task(problem_name, language_instruction)
+    # Extract timestamp from waypoints file for consistent naming
+    waypoints_timestamp = os.path.basename(os.path.dirname(waypoints_file)).split('_')[3:5]
+    timestamp_str = "_".join(waypoints_timestamp)
 
     # wrap the environment with data collection wrapper
-    tmp_directory = "demonstration_data/tmp/{}_ln_{}_scripted/{}".format(
+    tmp_directory = "demonstration_data/tmp/{}_ln_{}_auto/{}".format(
         problem_name,
         language_instruction.replace(" ", "_").strip('""'),
-        str(time.time()).replace(".", "_"),
+        timestamp_str,
     )
 
     env = DataCollectionWrapper(env, tmp_directory)
 
-    # make a new timestamped directory
-    t1, t2 = str(time.time()).split(".")
+    # make a new timestamped directory for output
     new_dir = os.path.join(
         args.directory,
-        f"{domain_name}_ln_{problem_name}_{t1}_{t2}_scripted_"
+        f"{domain_name}_ln_{problem_name}_{timestamp_str}_auto_"
         + language_instruction.replace(" ", "_").strip('""'),
     )
 
@@ -406,17 +540,17 @@ if __name__ == "__main__":
     if len(new_dir) > 200:
         new_dir = os.path.join(
             args.directory,
-            f"{domain_name}_ln_{problem_name}_{t1}_{t2}_scripted_"
-            + language_instruction.replace(" ", "_").strip('""')[:180 - len(t1) - len(t2)],
+            f"{domain_name}_ln_{problem_name}_{timestamp_str}_auto_"
+            + language_instruction.replace(" ", "_").strip('""')[:180 - len(timestamp_str)],
         )
 
-    os.makedirs(new_dir)
+    os.makedirs(new_dir, exist_ok=True)
 
     # collect demonstrations
     remove_directory = []
     i = 0
     while i < args.num_demonstration:
-        print(f"\n=== Collecting demonstration {i+1}/{args.num_demonstration} ===")
+        print(f"\n🔄 Collecting automated demonstration {i+1}/{args.num_demonstration}")
         saving = collect_scripted_trajectory(
             env, planner, target_joint_positions, target_grippers, remove_directory
         )
@@ -425,6 +559,8 @@ if __name__ == "__main__":
                 tmp_directory, new_dir, env_info, args, remove_directory
             )
             i += 1
-            print(f"Successfully collected demonstration {i}")
+            print(f"✅ Successfully collected demonstration {i}")
         else:
-            print("Failed to collect demonstration, retrying...")
+            print("❌ Failed to collect demonstration, retrying...")
+    
+    print(f"\n🎉 Auto collection completed! {i} demonstrations saved to {new_dir}")
