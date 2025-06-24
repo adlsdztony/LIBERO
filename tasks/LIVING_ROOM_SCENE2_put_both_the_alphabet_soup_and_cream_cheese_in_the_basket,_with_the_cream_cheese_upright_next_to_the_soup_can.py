@@ -13,17 +13,21 @@ from libero.libero.benchmark.mu_creation import LivingRoomScene2
 
 def main():
     scene_name = "living_room_scene2"
-    language = "Arrange the ketchup, alphabet soup, and orange juice in a straight line with the ketchup upside down and the other two upright"
+    language = (
+        "Put both the alphabet soup and cream cheese in the basket, with the cream cheese upright next to the soup can"
+    )
 
     register_task_info(
         language,
         scene_name=scene_name,
-        objects_of_interest=["ketchup_1", "alphabet_soup_1", "orange_juice_1"],
+        objects_of_interest=["alphabet_soup_1", "cream_cheese_1", "basket_1"],
         goal_states=[
-            ("upsidedown", "ketchup_1"),
-            ("upright", "alphabet_soup_1"),
-            ("upright", "orange_juice_1"),
-            ("linear", "ketchup_1", "alphabet_soup_1", "orange_juice_1", 0.05),
+            ("In", "alphabet_soup_1", "basket_1_contain_region"),
+            ("In", "cream_cheese_1", "basket_1_contain_region"),
+            ("Upright", "cream_cheese_1"),
+            ("PositionWithinObjectAnnulus", "cream_cheese_1", "alphabet_soup_1", 0.0, 0.15),
+            ("Not", ("Above", "cream_cheese_1", "alphabet_soup_1"))
+            
         ],
     )
 

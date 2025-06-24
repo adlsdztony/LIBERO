@@ -9,21 +9,19 @@ from libero.libero.utils.task_generation_utils import (
 )
 import numpy as np
 
-from libero.libero.benchmark.mu_creation import LivingRoomScene2
+from libero.libero.benchmark.mu_creation import KitchenScene4
 
 def main():
-    scene_name = "living_room_scene2"
-    language = "Arrange the ketchup, alphabet soup, and orange juice in a straight line with the ketchup upside down and the other two upright"
+    scene_name = "kitchen_scene4"
+    language = "Place the wine bottle in the bottom drawer and leave the drawer open"
 
     register_task_info(
         language,
         scene_name=scene_name,
-        objects_of_interest=["ketchup_1", "alphabet_soup_1", "orange_juice_1"],
+        objects_of_interest=["white_cabinet_1", "wine_bottle_1"],
         goal_states=[
-            ("upsidedown", "ketchup_1"),
-            ("upright", "alphabet_soup_1"),
-            ("upright", "orange_juice_1"),
-            ("linear", "ketchup_1", "alphabet_soup_1", "orange_juice_1", 0.05),
+            ("in",   "wine_bottle_1", "white_cabinet_1_bottom_region"),   
+            ("open", "white_cabinet_1_bottom_region"),
         ],
     )
 
