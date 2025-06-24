@@ -23,8 +23,8 @@ def main():
         # Objects placed from left to right: cup, book, then caddy
         ("OrderAlongAxis", "y", "white_yellow_mug_1", "black_book_1", "desk_caddy_1"),
         # Keep them roughly aligned in depth (x-axis)
-        ("PosiSameWith", "white_yellow_mug_1", "black_book_1", "x", 0.02),
-        ("PosiSameWith", "black_book_1", "desk_caddy_1", "x", 0.02),
+        ("PosiSameWith", "white_yellow_mug_1", "black_book_1", "x", 0.05),
+        ("PosiSameWith", "black_book_1", "desk_caddy_1", "x", 0.05),
         ("Not", ("InAir", "black_book_1", 0.89)),
         ("Not", ("InAir", "white_yellow_mug_1", 0.89)),
     ],
@@ -32,7 +32,5 @@ def main():
 
     bddl_file_names, failures = generate_bddl_from_task_info()
     print(bddl_file_names)
-
-
 if __name__ == "__main__":
     main()
