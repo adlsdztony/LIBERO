@@ -188,7 +188,8 @@ def main():
         ],
         goal_states=[
             ("On", "macaroni_and_cheese_1", "cookies_1"),    
-            ("InAir", "macaroni_and_cheese_1", 1.04)         
+            ("InAir", "macaroni_and_cheese_1", 1.04),
+            ("Upright", "macaroni_and_cheese_1"),
         ],   
     )
     bddl_file_names, failures = generate_bddl_from_task_info()
