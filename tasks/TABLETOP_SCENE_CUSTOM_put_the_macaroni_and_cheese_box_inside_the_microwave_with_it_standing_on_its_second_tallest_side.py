@@ -188,6 +188,16 @@ def main():
             ("RelaxedOn", "macaroni_and_cheese_1", "microwave_1"),
             ("Not", ("InAir", "macaroni_and_cheese_1", 0.9873)),
             ("InAir", "macaroni_and_cheese_1", 0.9870),
+            ("AxisAlignedWithinWorldAxis", "macaroni_and_cheese_1", "y", 85, 95, "z"),
+            ("Or",
+                ("AxisAlignedWithinWorldAxis", "macaroni_and_cheese_1", "x", 0, 5, "z"),
+                ("AxisAlignedWithinWorldAxis", "macaroni_and_cheese_1", "x", 175, 180, "z"),
+            ),
+            ("Not", ("InContact", "gripper0_finger1", "macaroni_and_cheese_1")),
+            ("Not", ("InContact", "gripper0_finger2", "macaroni_and_cheese_1")),
+            ("Not", ("InContact", "gripper0_hand", "macaroni_and_cheese_1")),
+            ("Not", ("InContact", "gripper0_finger1_pad", "macaroni_and_cheese_1")),
+            ("Not", ("InContact", "gripper0_finger2_pad", "macaroni_and_cheese_1")),
         ],
     )
     bddl_file_names, failures = generate_bddl_from_task_info()
