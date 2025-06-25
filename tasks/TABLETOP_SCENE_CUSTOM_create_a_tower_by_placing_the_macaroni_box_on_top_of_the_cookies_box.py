@@ -179,7 +179,7 @@ class TabletopSceneCustom(InitialSceneTemplates):
 def main():
 
     scene_name = "tabletop_scene_custom"
-    language = "Create a tower by placing the macaroni box on top of the cookies box."
+    language = "Create a tower by placing the upright macaroni box on top of the cookies box."
     register_task_info(
         language,
         scene_name=scene_name,
