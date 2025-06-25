@@ -188,12 +188,12 @@ def main():
         ],
         goal_states=[
             ("Or", ("All", (
-                    ("Or", ("AxisAlignedWithin", "black_book_1", "z", 1, 70), ("AxisAlignedWithin", "black_book_1", "z", 100, 179),),
+                    ("Or", ("AxisAlignedWithin", "black_book_1", "z", 20, 70), ("AxisAlignedWithin", "black_book_1", "z", 100, 160),),
                     ("InContact", "microwave_1", "black_book_1"),
                     ("Not", ("On", "black_book_1", "microwave_1")),
                     )),
                     ("All", (
-                    ("Or", ("AxisAlignedWithin", "black_book_2", "z", 1, 70), ("AxisAlignedWithin", "black_book_2", "z", 100, 179),),
+                    ("Or", ("AxisAlignedWithin", "black_book_2", "z", 20, 70), ("AxisAlignedWithin", "black_book_2", "z", 100, 160),),
                     ("InContact", "microwave_1", "black_book_2"),
                     ("Not", ("On", "black_book_2", "microwave_1")),
                     )),
