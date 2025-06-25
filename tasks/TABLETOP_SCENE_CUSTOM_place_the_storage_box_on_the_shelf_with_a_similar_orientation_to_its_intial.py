@@ -186,7 +186,7 @@ def main():
         objects_of_interest=["white_storage_box_1", "wooden_shelf_1"],
         goal_states=[
     ("AxisAlignedWithin", "white_storage_box_1", "y", 89, 91),
-    ("On", "white_storage_box_1", "wooden_shelf_1"),
+    ("RelaxedOn", "white_storage_box_1", "wooden_shelf_1"),
 ]
     )
     bddl_file_names, failures = generate_bddl_from_task_info()
