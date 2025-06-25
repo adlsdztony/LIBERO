@@ -20,14 +20,22 @@ from libero.libero.envs import *
 # Import our motion planning adapter
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from libero_adapter import LiberoMPLibAdapter, create_libero_planner
+from libero_adapter import LiberoMPLibAdapter
 
 
-def collect_scripted_trajectory(
-    env, planner, target_joint_positions, target_grippers, remove_directory=[]
+def collect_demonstration(
+    env, planner, waypoints, waypoint_type, target_grippers, remove_directory=[]
 ):
     """
-    Simple joint position tracking demonstration collection using waypoints.
+    Unified demonstration collection function that handles both joint position and end-effector pose waypoints.
+    
+    Args:
+        env: The robosuite environment
+        planner: LiberoMPLibAdapter for motion planning
+        waypoints: List of waypoints (joint positions or poses)
+        waypoint_type: "joint_position" or "end_effector_pose"
+        target_grippers: List of gripper commands
+        remove_directory: List for cleanup
     """
 
     reset_success = False
@@ -43,9 +51,9 @@ def collect_scripted_trajectory(
     task_completion_hold_count = -1
     saving = True
     count = 0
-    joint_index = 0
+    waypoint_index = 0
 
-    print(f"🤖 Starting automated trajectory with {len(target_joint_positions)} waypoints")
+    print(f"🤖 Starting automated trajectory with {len(waypoints)} waypoints (type: {waypoint_type})")
 
     # Run multiple empty actions to ensure the arm is stable
     empty_action = np.zeros(8)
@@ -56,38 +64,63 @@ def collect_scripted_trajectory(
         current_gripper = planner.get_gripper_joint_positions(obs)
         env.render()
 
-    while joint_index < len(target_joint_positions):
+    while waypoint_index < len(waypoints):
         # Get current joint positions from observation
         current_joints = planner.get_current_joint_positions(obs)
         current_gripper = planner.get_gripper_joint_positions(obs)
 
-        # Get target joint positions
-        target_joints = target_joint_positions[joint_index]
-        target_gripper = target_grippers[joint_index]
+        # Get target waypoint and gripper command
+        waypoint = waypoints[waypoint_index]
+        target_gripper = target_grippers[waypoint_index]
 
-        print(f"📍 Waypoint {joint_index + 1}/{len(target_joint_positions)}: Moving to joint configuration")
-        print(f"   Target joints: {[f'{x:.3f}' for x in target_joints]}")
+        print(f"📍 Waypoint {waypoint_index + 1}/{len(waypoints)}: Processing {waypoint_type}")
+        
+        # Plan trajectory based on waypoint type
+        if waypoint_type == "joint_position":
+            # For joint position waypoints
+            target_joints = waypoint
+            print(f"   Target joints: {[f'{x:.3f}' for x in target_joints]}")
+            
+            # Plan trajectory to target joint position using motion planner
+            result = planner.planner.plan_qpos(
+                goal_qposes=[target_joints], 
+                current_qpos=np.concatenate((current_joints, current_gripper)),
+                time_step=0.1,
+                rrt_range=0.1,
+                planning_time=5.0,
+                fix_joint_limits=True,
+                verbose=False
+            )
+            
+        elif waypoint_type == "end_effector_pose":
+            # For end-effector pose waypoints
+            pos, quat = waypoint
+            print(f"   Target position: [{pos[0]:.3f}, {pos[1]:.3f}, {pos[2]:.3f}]")
+            print(f"   Target quaternion: [{quat[0]:.3f}, {quat[1]:.3f}, {quat[2]:.3f}, {quat[3]:.3f}] (x,y,z,w format)")
+            
+            # Plan trajectory to target pose using RRTConnect
+            result = planner.plan_to_pose(pos, quat, np.concatenate((current_joints, current_gripper)), use_screw=False)
+        
+        else:
+            print(f"❌ Unsupported waypoint type: {waypoint_type}")
+            waypoint_index += 1
+            continue
+            
         print(f"   Target gripper: {target_gripper}")
 
-        # Plan trajectory to target joint position using motion planner
-        result = planner.planner.plan_qpos(
-            goal_qposes=[target_joints], 
-            current_qpos=np.concatenate((current_joints, current_gripper)),
-            time_step=0.1,
-            rrt_range=0.1,
-            planning_time=5.0,
-            fix_joint_limits=True,
-            verbose=False
-        )
         if result["status"] != "Success":
             print(f"❌ Motion planning failed: {result['status']}, skipping this waypoint")
-            joint_index += 1
+            waypoint_index += 1
             continue
 
         # Add several duplicate steps to hold the final position
         duplicate_steps = 20
         if len(result["position"]) == 0:
-            result["position"] = np.array([target_joints] * (duplicate_steps))
+            if waypoint_type == "joint_position":
+                result["position"] = np.array([target_joints] * (duplicate_steps))
+            else:
+                # For pose waypoints, we need to use the current joint configuration
+                result["position"] = np.array([current_joints] * (duplicate_steps))
         else:
             last_step = result["position"][-1]
             result["position"] = np.concatenate(
@@ -134,13 +167,17 @@ def collect_scripted_trajectory(
 
             time.sleep(0.01)
         
-        # Calculate final joint error
-        final_joints = planner.get_current_joint_positions(obs)
-        joint_error_final = target_joints - final_joints
-        print(f"   Final joint error: {[f'{e:.3f}' for e in joint_error_final]}")
+        # Calculate final error
+        if waypoint_type == "joint_position":
+            final_joints = planner.get_current_joint_positions(obs)
+            joint_error_final = target_joints - final_joints
+            print(f"   Final joint error: {[f'{e:.3f}' for e in joint_error_final]}")
+        else:
+            # For pose waypoints, we could calculate pose error here if needed
+            pass
 
-        # Move to next joint target
-        joint_index += 1
+        # Move to next waypoint
+        waypoint_index += 1
         
         # If task completed, break
         if task_completion_hold_count == 0:
@@ -340,6 +377,20 @@ def gather_demonstrations_as_hdf5(
 
 
 if __name__ == "__main__":
+    print("=" * 70)
+    print("AUTOMATED DEMONSTRATION COLLECTION")
+    print("=" * 70)
+    print("Purpose: Automatically collect robotic demonstrations using pre-recorded")
+    print("         waypoints. Supports both joint position and end-effector pose")
+    print("         waypoint types for trajectory execution.")
+    print()
+    print("Supported waypoint types:")
+    print("  - joint_position: Direct joint angle control")
+    print("  - end_effector_pose: End-effector pose control with motion planning")
+    print("    (poses use quaternion format [x, y, z, w])")
+    print("=" * 70)
+    print()
+    
     # Arguments
     parser = argparse.ArgumentParser(description="Auto collect demonstrations using waypoints")
     parser.add_argument(
@@ -363,9 +414,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--waypoint-type",
         type=str,
-        default="joint_position",
-        choices=["joint_position"],
-        help="Type of waypoints to use (only joint_position supported for now)"
+        default="end_effector_pose",
+        choices=["joint_position", "end_effector_pose"],
+        help="Type of waypoints to use: joint_position or end_effector_pose"
     )
     parser.add_argument(
         "--config",
@@ -453,31 +504,44 @@ if __name__ == "__main__":
         print("❌ No waypoint demonstrations found in file")
         exit(1)
     
-    # Use the first demonstration's waypoints (you could extend this to use all)
+    # Process waypoints based on type
     demo_waypoints = waypoints_data["demonstrations"][0]
-    target_joint_positions = demo_waypoints["joint_positions"]
+    
+    # Load waypoints based on type
+    if args.waypoint_type == "joint_position":
+        waypoints = demo_waypoints["joint_positions"]
+        print(f"📍 Loaded {len(waypoints)} joint position waypoints")
+        
+    elif args.waypoint_type == "end_effector_pose":
+        if "ee_pos_quat" not in demo_waypoints:
+            print("❌ No end-effector pose data found in waypoints")
+            exit(1)
+        
+        # Convert ee_pos_quat to list of [pos, quat] pairs
+        ee_data = demo_waypoints["ee_pos_quat"]
+        waypoints = []
+        for pose in ee_data:
+            pos = pose[:3]  # First 3 elements are position
+            quat = pose[3:]  # Last 4 elements are quaternion (x,y,z,w format)
+            waypoints.append([pos.tolist(), quat.tolist()])
+        
+        print(f"📍 Loaded {len(waypoints)} end-effector pose waypoints")
+        print(f"📍 Quaternion format: [x, y, z, w]")
+    
+    else:
+        print(f"❌ Unsupported waypoint type: {args.waypoint_type}")
+        exit(1)
     
     # Convert gripper commands to robot actions
-    # gripper_commands contains True (close) or False (open)
     target_grippers = []
     if "gripper_commands" in demo_waypoints:
-        # New format: direct boolean commands
         for gripper_command in demo_waypoints["gripper_commands"]:
             target_grippers.append(1 if gripper_command else -1)  # 1=close, -1=open
         print(f"📍 Using new gripper command format")
-    elif "gripper_pos" in demo_waypoints:
-        # Legacy format: convert from positions
-        print(f"📍 Converting from legacy gripper position format")
-        gripper_threshold = 0.02
-        for gripper_pos in demo_waypoints["gripper_pos"]:
-            # Average gripper position (both fingers)
-            avg_gripper_pos = np.mean(gripper_pos)
-            target_grippers.append(-1 if avg_gripper_pos > gripper_threshold else 1)
     else:
         print("❌ No gripper data found in waypoints")
         exit(1)
     
-    print(f"📍 Loaded {len(target_joint_positions)} waypoints from demonstration")
     print(f"🤏 Gripper commands: {['CLOSE' if cmd == 1 else 'OPEN' for cmd in target_grippers]}")
     print(f"💾 Demonstrations will be saved to: {args.directory}")
     
@@ -512,9 +576,35 @@ if __name__ == "__main__":
         print("Please check URDF/SRDF paths and ensure mplib is installed")
         exit(1)
 
-    # Set the transform from the world to the robot base
-    KITCHEN_SCENE_ROBOT_BASE_POS = [-0.66, 0, 0.804]
-    planner.set_base_pose(KITCHEN_SCENE_ROBOT_BASE_POS, [0, 0, 0, 1])
+
+    # Setup motion planner for end-effector pose control if needed
+    if args.waypoint_type == "end_effector_pose":
+        # Load robot base pose for the planner (following end_effector_pose_control.py)
+        base_pose_path = os.path.join("motion_planning", f"{problem_name}", "base_pose.txt")
+        if os.path.exists(base_pose_path):
+            with open(base_pose_path, 'r') as f:
+                base_pose_data = json.load(f)
+            base_pos = np.array(base_pose_data["base_pos"])
+            base_quat = np.array(base_pose_data["base_quat"])
+            print(f"✅ Loaded robot base pose - Position: {base_pos}, Quaternion: {base_quat}")
+            
+            # Set the base pose in the planner
+            planner.set_base_pose(base_pos, base_quat)
+            print("✅ Base pose set successfully in motion planner")
+        else:
+            print(f"⚠️ Base pose file not found: {base_pose_path}")
+            print("Using default base pose for end-effector pose control")
+            planner.set_base_pose([-0.66, 0.0, 0.912], [0, 0, 0, 1])
+
+        # Load gripper-to-hand transform matrix
+        if os.path.exists("motion_planning/gripper_to_hand_transform.npy"):
+            success = planner.load_and_set_ee_transform("motion_planning/gripper_to_hand_transform.npy")
+            if success:
+                print("✅ Loaded gripper-to-hand transform for end-effector pose control")
+            else:
+                print("⚠️ Failed to load gripper-to-hand transform, using identity matrix")
+        else:
+            print("⚠️ No gripper-to-hand transform file found, using identity matrix for end-effector pose control")
 
     # Extract timestamp from waypoints file for consistent naming
     waypoints_timestamp = os.path.basename(os.path.dirname(waypoints_file)).split('_')[3:5]
@@ -551,8 +641,8 @@ if __name__ == "__main__":
     i = 0
     while i < args.num_demonstration:
         print(f"\n🔄 Collecting automated demonstration {i+1}/{args.num_demonstration}")
-        saving = collect_scripted_trajectory(
-            env, planner, target_joint_positions, target_grippers, remove_directory
+        saving = collect_demonstration(
+            env, planner, waypoints, args.waypoint_type, target_grippers, remove_directory
         )
         if saving:
             gather_demonstrations_as_hdf5(
@@ -564,3 +654,6 @@ if __name__ == "__main__":
             print("❌ Failed to collect demonstration, retrying...")
     
     print(f"\n🎉 Auto collection completed! {i} demonstrations saved to {new_dir}")
+    print(f"📊 Used waypoint type: {args.waypoint_type}")
+    if args.waypoint_type == "end_effector_pose":
+        print("🔧 End-effector poses were converted to joint trajectories using motion planning")
