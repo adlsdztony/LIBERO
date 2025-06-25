@@ -7,17 +7,20 @@ import numpy as np
 import os
 import robosuite as suite
 import time
-from glob import glob
 from robosuite import load_controller_config
 from robosuite.wrappers import DataCollectionWrapper, VisualizationWrapper
 from robosuite.utils.input_utils import input2action
+import robosuite.utils.transform_utils as transform_utils
+from libero_adapter import LiberoMPLibAdapter
+from pose_utils import print_robot_pose_info, save_gripper_to_hand_transform, get_robot_base_pose, get_gripper_hand_pose_in_base
 
 import libero.libero.envs.bddl_utils as BDDLUtils
 from libero.libero.envs import *
 from waypoint_keyboard import WaypointKeyboard
+import os
 
 def collect_waypoint_trajectory(
-    env, device, arm, env_configuration, problem_info
+    env, device, arm, env_configuration, problem_info, planner: LiberoMPLibAdapter
 ):
     """
     Use the keyboard to collect waypoints demonstration.
@@ -58,7 +61,7 @@ def collect_waypoint_trajectory(
     }
 
     print("🎮 Starting waypoint collection. Press 'J' to record waypoints!")
-
+    run_once = True
     while True:
         count += 1
 
@@ -86,6 +89,25 @@ def collect_waypoint_trajectory(
         # Run environment step
         obs, _, _, _ = env.step(action)
         
+        # Uncomment the selected line below to use some debugging features
+        if run_once:
+            # 1. Save the gripper-to-hand transform to a file
+            # save_gripper_to_hand_transform(active_robot, obs)
+
+            # 2. Print robot pose (hand, ee, base, joints, ...) information
+            # print_robot_pose_info(active_robot, obs)
+
+            # 3. Save the robot base position and quaternion to a file
+            # base_pos, base_quat = get_robot_base_pose(active_robot, obs)
+            # base_pose_path = os.path.join("motion_planning", f"{problem_info['problem_name']}/", "base_pose.txt")
+            # os.makedirs(os.path.dirname(base_pose_path), exist_ok=True)
+            # with open(base_pose_path, "w") as f:
+            #     f.write(json.dumps({
+            #         "base_pos": base_pos.tolist(),
+            #         "base_quat": base_quat.tolist()
+            #     }))
+            run_once = False
+
         # Check if waypoint recording was requested (more efficient check)
         if device.record_waypoint:
             waypoint_count += 1
@@ -347,6 +369,12 @@ if __name__ == "__main__":
     # Grab reference to controller config and convert it to json-encoded string
     env_info = json.dumps(config)
 
+    planner = LiberoMPLibAdapter(
+        urdf_path="./data/panda/panda.urdf",
+        srdf_path="./data/panda/panda.srdf",
+        move_group="panda_hand"
+    )
+
     # No need for temporary directory since we save waypoints directly
     # Just use the device for keyboard input
     device = WaypointKeyboard(
@@ -384,7 +412,7 @@ if __name__ == "__main__":
             print(f"🎮 Starting waypoint collection {ep + 1}")
             
             saving, waypoints_data = collect_waypoint_trajectory(
-                env, device, args.arm, args.config, problem_info
+                env, device, args.arm, args.config, problem_info, planner
             )
             
             if saving and waypoints_data:
