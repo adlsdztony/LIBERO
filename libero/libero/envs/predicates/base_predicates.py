@@ -401,6 +401,24 @@ class In(BinaryAtomic):
     def expected_arg_types(self):
         return [BaseObjectState, BaseObjectState]
 
+class RelaxedIn(BinaryAtomic):
+    """
+    Check if arg1 is contained within arg2 without the contact constraint.
+    This predicate checks if the first object (arg1) is contained within the second object (arg2) without the contact constraint.
+    
+    Usage: In()(arg1, arg2)
+    Args:
+        arg1: The object to check for containment.
+        arg2: The object that is expected to contain arg1.
+    Returns:
+        bool: True if arg1 is contained within arg2, False otherwise.
+    """
+    def __call__(self, arg1, arg2):
+        return arg2.check_contain(arg1)
+
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState]
+
 
 class On(BinaryAtomic):
     """
