@@ -14,12 +14,14 @@ from robosuite.wrappers import VisualizationWrapper
 
 def collect_joint_position_trajectory(env, target_joint_positions, max_steps=1000):
     """
-    Simple joint position control to track fixed joint positions.
+    Test joint position control by commanding the robot to track fixed joint positions.
+    This function demonstrates the capability of the robosuite JOINT_POSITION controller
+    to control individual joint positions of the Panda robotic arm.
     
     Args:
         env: The robosuite environment
-        target_joint_positions: Target joint positions to track (7 values for Panda)
-        max_steps: Maximum number of steps to run
+        target_joint_positions: Target joint positions to track (7 values for Panda arm)
+        max_steps: Maximum number of steps to run the test
     """
 
     reset_success = False
@@ -56,7 +58,7 @@ def collect_joint_position_trajectory(env, target_joint_positions, max_steps=100
         action = np.zeros(8)
         action[:7] = joint_error  # Position error as action
         
-        if count % 30 == 0:
+        if count % 100 == 0:
             print(f"Step {count}:")
             print(f"  Current joints: {current_joints.tolist()}")
             print(f"  Target joints:  {target_joint_positions.tolist()}")
@@ -92,29 +94,31 @@ def collect_joint_position_trajectory(env, target_joint_positions, max_steps=100
 def get_target_joint_positions():
     """
     Define the target joint positions for the robot to track.
+    This is a hardcoded joint configuration for testing purposes.
     
     Returns:
-        np.ndarray: Target joint positions (7 values for Panda)
+        np.ndarray: Target joint positions (7 values for Panda arm joints)
     """
-    # Hard-coded target joint positions
+    # Hardcoded target joint positions for testing joint position control
+    # These values represent a specific pose of the Panda arm
     target_joints = np.array([-0.006, 0.358, -0.010, -1.705, 0.003, 2.006, 0.768])
 
-    target_joints = np.array([-0.012804012060428523, 0.4497382729087628, -0.021723556113430475, -1.5588530848715532, 0.008233509579399926, 1.9516999936318244, 0.749479490966512])
-
-    print(f"Target joint positions: {[f'{j:.3f}' for j in target_joints]}")
+    print(f"Using hardcoded target joint positions: {[f'{j:.3f}' for j in target_joints]}")
     return target_joints
 
 
 if __name__ == "__main__":
+    print("=" * 60)
+    print("JOINT POSITION CONTROL TEST")
+    print("=" * 60)
+    print("Purpose: Testing the capability of the robosuite JOINT_POSITION controller")
+    print("         to control the joint positions of the Panda robotic arm.")
+    print("         The robot will move to a predefined hardcoded joint configuration.")
+    print("=" * 60)
+    print()
+    
     # Arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--robots",
-        nargs="+",
-        type=str,
-        default="Panda",
-        help="Which robot(s) to use in the env",
-    )
+    parser = argparse.ArgumentParser(description="Test joint position control for Panda robot")
     parser.add_argument(
         "--camera",
         type=str,
@@ -122,29 +126,22 @@ if __name__ == "__main__":
         help="Which camera to use for rendering",
     )
     parser.add_argument(
-        "--controller",
-        type=str,
-        default="JOINT_POSITION",
-        help="Choice of controller. Use JOINT_POSITION for direct joint control",
+        "--bddl-file",
+        type=str, 
+        default="libero/libero/bddl_files/libero_90/KITCHEN_SCENE1_put_the_black_bowl_on_the_plate.bddl",
+        help="Path to the BDDL file defining the task",
     )
-    parser.add_argument("--bddl-file", type=str, required=True)
-
     args = parser.parse_args()
 
     # Get controller config
-    controller_config = load_controller_config(default_controller=args.controller)
-    controller_config["kp"] = 200.0
-    controller_config["damping_ratio"] = 0.1
+    controller_config = load_controller_config(default_controller="JOINT_POSITION")
+    controller_config["kp"] = 150.0
+    controller_config["damping_ratio"] = 0.8
     controller_config["output_max"] = 0.8
     controller_config["output_min"] = -0.8
-    print("Controller config", controller_config)
-        # Controller config {'type': 'JOINT_POSITION', 'input_max': 1, 'input_min': -1, 'output_max': 0.05, 'output_min': -0.05,
-        #  'kp': 300.0, 'damping_ratio': 0.0, 'impedance_mode': 'fixed', 'kp_limits': [0, 300], 'damping_ratio_limits': [0, 10], 
-        # 'qpos_limits': None, 'interpolation': None, 'ramp_ratio': 0.2}
 
-    # Create argument configuration
     config = {
-        "robots": args.robots,
+        "robots": ["Panda"],
         "controller_configs": controller_config,
     }
 
