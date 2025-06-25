@@ -1870,3 +1870,73 @@ class YawAngleAligned(BinaryAtomic):
     def expected_arg_types(self):
         return [BaseObjectState, BaseObjectState, float, float]
 
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState, float, float]
+
+class IsFacingObject(BinaryAtomic):
+    """
+    Check if object1 is facing object2 according to a specified local direction and angle threshold.
+
+    The local direction is given as three floats (dir_x, dir_y, dir_z) in object1's frame.
+    We transform this local direction into world coordinates by object1's orientation,
+    then measure the angle between that world‐space ray and the vector from object1 to object2.
+    If this angle is within the given threshold (in degrees), the predicate is True.
+
+    Usage:
+        IsFacingObject()(obj1, obj2, dir_x, dir_y, dir_z, angle_thresh)
+
+    Args:
+        obj1: The object whose facing direction is tested (BaseObjectState).
+        obj2: The target object (BaseObjectState).
+        dir_x, dir_y, dir_z: Components of the local direction vector in obj1's frame.
+                             Will be normalized internally.
+        angle_thresh: Maximum allowable angle (in degrees) between facing direction and vector to obj2.
+
+    Returns:
+        bool: True if obj1 is facing obj2 within angle_thresh, False otherwise.
+    """
+
+    def __call__(
+        self,
+        obj1: BaseObjectState,
+        obj2: BaseObjectState,
+        dir_x: float,
+        dir_y: float,
+        dir_z: float,
+        angle_thresh: float
+    ) -> bool:
+        # Object positions
+        pos1 = np.array(obj1.get_geom_state()["pos"])
+        pos2 = np.array(obj2.get_geom_state()["pos"])
+        vec_to_target = pos2 - pos1
+        dist = np.linalg.norm(vec_to_target)
+        if dist < 1e-6:
+            return False  # Too close or same position
+
+        # Normalize target direction
+        dir_to_target = vec_to_target / dist
+
+        # Get obj1 rotation matrix from quaternion
+        w, x, y, z = obj1.get_geom_state()["quat"]
+        quat = np.array([x, y, z, w])
+        R = transform_utils.quat2mat(quat)
+
+        # Local direction vector
+        local_dir = np.array([dir_x, dir_y, dir_z], dtype=np.float64)
+        norm_local = np.linalg.norm(local_dir)
+        if norm_local < 1e-6:
+            raise ValueError("Local direction must be non-zero")
+        local_dir /= norm_local
+
+        # Transform to world direction
+        world_dir = R.dot(local_dir)
+
+        # Angle between world_dir and dir_to_target
+        cos_angle = np.dot(world_dir, dir_to_target)
+        cos_angle = np.clip(cos_angle, -1.0, 1.0)
+        angle = np.degrees(np.arccos(cos_angle))
+
+        return angle <= angle_thresh
+
+    def expected_arg_types(self) -> List[type]:
+        return [BaseObjectState, BaseObjectState, float, float, float, float]
