@@ -177,7 +177,7 @@ class TabletopSceneCustom(InitialSceneTemplates):
 def main():
     """Defines and registers the task with the libero environment."""
     scene_name = "tabletop_scene_custom"
-    language = "Form a equilateral triangle with all 3 books upright. Then place the milk carton in the centre of the triangle."
+    language = "Form a equilateral triangle with all 3 books upright. Then place the milk carton upright in the centre of the triangle."
     register_task_info(
         language,
         scene_name=scene_name,
