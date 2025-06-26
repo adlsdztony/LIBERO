@@ -189,8 +189,7 @@ def main():
         goal_states=[
             ("In", "cookies_1", "microwave_1_heating_region"),
             ("Open", "microwave_1"),
-            ("Not", ("InAir", "cookies_1", 0.9865)),
-            ("InAir", "cookies_1", 0.9860),
+            ("AxisAlignedWithin", "cookies_1", "y", 0, 5)
         ],
     )
     bddl_file_names, failures = generate_bddl_from_task_info()
