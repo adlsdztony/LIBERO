@@ -14,16 +14,14 @@ from libero.libero.benchmark.mu_creation import *
 
 def main():
     scene_name = "living_room_scene2"
-    language = "Push the milk until it contacts the orange juice"
+    language = "Put the butter in the basket upside down"
     register_task_info(
         language,
         scene_name=scene_name,
-        objects_of_interest=["milk_1","orange_juice_1"],
+        objects_of_interest=["butter_1", "basket_1"],
         goal_states=[
-            ("InContact", "milk_1", "orange_juice_1"),
-            ("AxisAlignedWithin", "milk_1", "y", 0, 15),
-            ("AxisAlignedWithin", "orange_juice_1", "y", 0, 15),
-            ("PositionWithin", "orange_juice_1", 0, -0.25, 0.5, 0.1, 0.1, 0.1)
+            ("AxisAlignedWithin", "butter_1", "z", 170, 180),
+            ("In", "butter_1", "basket_1_contain_region")
         ],
     )
 
