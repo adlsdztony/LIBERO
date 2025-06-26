@@ -186,8 +186,21 @@ def main():
     "plate_1"
 ],
         goal_states=[
-        ("InContact", "red_coffee_mug_1", "plate_1"),
-        ("OrientedAtDegree", "plate_1", 0, 0, 180, 30, 30, 180),
+        ("Sequential", (("All", (
+            ("Any", (
+                ("InContact", "gripper0_finger1", "red_coffee_mug_1"),
+                ("InContact", "gripper0_finger2", "red_coffee_mug_1"),
+                ("InContact", "gripper0_finger1_pad", "red_coffee_mug_1"),
+                ("InContact", "gripper0_finger2_pad", "red_coffee_mug_1"),
+            )),
+            ("InContact", "red_coffee_mug_1", "plate_1"),
+            ("AxisAlignedWithin", "plate_1", "z", 0, 5),
+        )),
+        ("All", (
+            ("InContact", "red_coffee_mug_1", "plate_1"),
+            ("OrientedAtDegree", "plate_1", 0, 0, 180, 30, 30, 180),
+        ))),
+        ),
         ("Not", ("OrientedAtDegree", "plate_1", 0, 0, 0, 5, 5, 360)),
         ("Not", ("InContact", "gripper0_finger1", "red_coffee_mug_1")),
         ("Not", ("InContact", "gripper0_finger2", "red_coffee_mug_1")),
