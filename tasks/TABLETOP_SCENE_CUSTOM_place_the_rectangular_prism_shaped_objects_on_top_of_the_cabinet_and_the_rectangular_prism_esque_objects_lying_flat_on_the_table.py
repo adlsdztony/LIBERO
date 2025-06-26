@@ -179,7 +179,7 @@ class TabletopSceneCustom(InitialSceneTemplates):
 def main():
 
     scene_name = "tabletop_scene_custom"
-    language = "Place the rectangular prism shaped objects on top of the cabinet and the rectangular prism-esque objects lying flat on the table"
+    language = "Place perfect rectangular prisms on the cabinet and from the remaining objects place the object that is closest to a rectangular prism lying flat on the table.
     register_task_info(
         language,
         scene_name=scene_name,
