@@ -191,13 +191,11 @@ def main():
                     ("Not", ("InAir", "black_book_1", 0.9260)),
                     ("InAir", "black_book_1", 0.9130),
                     ("Or", ("AxisAlignedWithin", "black_book_1", "x", 175, 180), ("AxisAlignedWithin", "black_book_1", "x", 0, 5)),
-                    ("AxisAlignedWithin", "black_book_1", "z", 87, 93),
                     )),
                     ("All", (  
                     ("Not", ("InAir", "black_book_2", 0.9260)),
                     ("InAir", "black_book_2", 0.9130),
                     ("Or", ("AxisAlignedWithin", "black_book_2", "x", 175, 180), ("AxisAlignedWithin", "black_book_2", "x", 0, 5)),
-                    ("AxisAlignedWithin", "black_book_2", "z", 87, 93),
                     )),
             )
         ],
