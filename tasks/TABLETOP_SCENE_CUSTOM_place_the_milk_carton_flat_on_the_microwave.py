@@ -188,8 +188,12 @@ def main():
         ],
         goal_states=[
             ("RelaxedOn", "milk_1", "microwave_1"),
-            ("Not", ("InAir", "milk_1", 1.136)),
             ("AxisAlignedWithin", "milk_1", "y", 87, 93),
+            ("Not", ("InContact", "gripper0_finger1", "milk_1")),
+            ("Not", ("InContact", "gripper0_finger2", "milk_1")),
+            ("Not", ("InContact", "gripper0_hand", "milk_1")),
+            ("Not", ("InContact", "gripper0_finger1_pad", "milk_1")),
+            ("Not", ("InContact", "gripper0_finger2_pad", "milk_1")),
         ],
     )
     bddl_file_names, failures = generate_bddl_from_task_info()
