@@ -24,7 +24,10 @@ def main():
             ("RelaxedOn", "butter_1", "tomato_sauce_1"),
             ("In", "tomato_sauce_1", "basket_1_contain_region"),
             ("In", "butter_1", "basket_1_contain_region"),
-            ("UpsideDown", "basket_1")
+            ("UpsideDown", "basket_1"),
+            ("PositionWithin", "basket_1", 0.0, 0.0, 0.582, 1, 1, 0.01),
+            ("PositionWithin", "tomato_sauce_1", 0.0, 0.0, 0.474, 1, 1, 0.02),
+            ("PositionWithin", "butter_1", 0.0, 0.0, 0.521, 1, 1, 0.02),
         ],
     )
 

@@ -236,3 +236,205 @@ If you encounter a "long path" issue on Windows, you can try the following steps
 2. Navigate to `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem`.
 3. Find the `LongPathsEnabled` key and set its value to `1`.
 4. Restart your computer for the changes to take effect.
+
+### Robot Components
+
+#### Available Robot Components
+
+The following robot components are automatically registered and available for use in predicates:
+
+- `gripper0_finger1` - First gripper finger
+- `gripper0_finger2` - Second gripper finger
+- `gripper0_finger1_pad` - First gripper finger pad
+- `gripper0_finger2_pad` - Second gripper finger pad
+- `gripper0_hand` - Gripper hand/palm
+
+#### Usage in Predicates
+
+You can use these gripper components directly in contact-based predicates and position-based predicates.
+For example:
+
+```python
+# Check if gripper finger is touching an object
+goal_states = [
+    ("InContact", "gripper0_finger1", "cube_1"),
+    ("InContact", "gripper0_finger2", "sphere_1"),
+    ("Above", "gripper0_hand", "cube_1"),
+]
+```
+
+#### Implementation Details
+
+The robot components are implemented as `RobotObjectState` objects that:
+- Track the geometric state of robot collision geometries
+- Support contact detection with other objects in the environment
+- Are automatically initialized when the environment is set up
+- Can be accessed through the standard `get_object()` interface
+
+### Constraints
+
+Constraints are wrapper predicates that allow you to specify temporal requirements for predicates during task execution. They monitor whether a predicate condition holds throughout the entire episode, occurs at least once, or never occurs.
+
+#### Available Constraint Types
+
+##### ConstraintAlways
+Ensures that a predicate remains true throughout the entire task execution. The constraint fails if the predicate becomes false at any point during the episode.
+
+**Use Case**: Maintaining object orientation, preventing spills, or ensuring continuous contact.
+
+**Example**:
+```python
+("ConstraintAlways", ("UpRight", "akita_black_bowl_1"))
+```
+This ensures the bowl remains upright throughout the entire task execution.
+
+##### ConstraintOnce
+Requires that a predicate becomes true at least once during the task execution. The constraint is satisfied as soon as the predicate evaluates to true for the first time.
+
+**Use Case**: Ensuring specific interactions occur, like grasping an object or making contact.
+
+**Example**:
+```python
+("ConstraintOnce", ("InContact", "gripper0_finger1", "akita_black_bowl_1"))
+```
+This ensures the gripper finger touches the bowl at least once during the task.
+
+##### ConstraintNever
+Ensures that a predicate never becomes true during the task execution. The constraint fails immediately if the predicate evaluates to true at any point.
+
+**Use Case**: Avoiding collisions, preventing unwanted interactions, or maintaining safety conditions.
+
+**Example**:
+```python
+("ConstraintNever", ("InContact", "akita_black_bowl_1", "plate_1"))
+```
+This ensures the bowl never touches the plate during the entire task.
+
+#### Usage in Task Definition
+
+Constraints can be used in both `goal_states` and as standalone requirements. Here's a comprehensive example:
+
+```python
+goal_states = [
+    # Regular goal predicates
+    ("In", "cube_1", "box_1"),
+    ("Closed", "wooden_cabinet_1_top_region"),
+    
+    # Constraint predicates
+    ("ConstraintAlways", ("UpRight", "akita_black_bowl_1")),
+    ("ConstraintOnce", ("InContact", "gripper0_finger1", "akita_black_bowl_1")),
+    ("ConstraintNever", ("InContact", "akita_black_bowl_1", "plate_1")),
+]
+```
+
+### Sequential
+You can define sequential tasks using the `Sequential` predicate. This allows you to specify a sequence of conditions that must be met in order, enabling more complex task structures.
+```python
+("Sequential", (
+    ("All", (
+        ("Close", "wooden_cabinet_1_middle_region"),
+        ("Not", ("InContact", "akita_black_bowl_1", "plate_1")),
+    )),
+    ("All", (
+        ("InContact", "akita_black_bowl_1", "plate_1"),
+        ("ConstraintAlways", ("Upright", "akita_black_bowl_1")),
+    ))
+))
+```
+For this example, the first condition requires the cabinet to be closed and the bowl not to be in contact with the plate. Only after the first condition is satisfied, the second condition will be checked, which requires the bowl to be in contact with the plate and remain upright.
+
+### Watch
+The `Watch` predicate allows you to monitor a specific predicate condition throughout the task execution. It always returns `True` and is useful for tracking conditions without affecting task success.
+```python
+("Watch", ("InContact", "gripper0_finger1", "akita_black_bowl_1"))
+```
+
+## Task Dimension Diversity
+
+### Task Design Guidelines for Object Manipulation with Rich Dimensions
+
+This section provides a categorized list of example tasks that highlight **dimensions currently underrepresented** in our dataset. These examples are intended to inspire the design of **new tasks** that incorporate richer aspects such as **motion dynamics, object-object interactions, camera-view reasoning, and process constraints**. You may leverage the sequential predicate for process constraint in the instruction.
+
+Please use these examples as reference to explore **new types of interactions**, rather than applying simple augmentations (e.g., changing objects or slightly adjusting angles). You are encouraged to go beyond traditional pick-and-place tasks and propose creative, meaningful manipulations that add novel dimensions to the dataset.
+
+
+### Task Categories and Examples
+
+---
+
+### 1. Motion Types (Address the Way of Moving)
+
+| Task Description | Example |
+|------------------|---------|
+| Push an object to a target location | Push the bowl on the cabinet to the right front corner |
+| Push an object over | Push the milk carton over |
+| Shake an object | Shake the ketchup up and down three times |
+| Spin an object | Spin the tomato sauce |
+| Drag along a line | Drag the white-and-yellow mug to the right of porcelain mug along a straight line |
+| Push back and forth | Push the bowl on the table back and forth |
+| Roll cylindrical object | Roll the tomato sauce can back and forth |
+| Drop object to fall into a region | Pick up the bowl and drop it in the top drawer |
+| Slide in circular motion | Slide the butter to make its center move along a circular path |
+
+---
+
+### 2. Camera-View Related Tasks
+
+| Task Description | Example |
+|------------------|---------|
+| Fully hide from all cameras | Hide the butter such that it is invisible from all cameras |
+| Hide from front but visible to top camera | Hide the butter from the front camera view while visible for the top camera |
+| Reveal hidden item | Find the hidden bowl and put it on the table |
+| Rotate object for top-view inspection | Rotate the milk carton to make all sides inspected for top camera |
+| Use shadows in reasoning | Pick up the book and adjust its position to make its shadow cover the mug |
+| Texture related | Put all dairy products in the basket
+
+---
+
+### 3. Non-Grabbing Interaction
+
+| Task Description | Example |
+|------------------|---------|
+| Hover gripper | Hover the gripper above the basket |
+| Point without touching | Point to the orange juice without touching it |
+| Tap object | Tap the top of tomato sauce twice |
+| Position gripper near object without grabbing | Put the gripper to the place where it needs to be in order to pick the milk carton from side, but do not grab it |
+
+---
+
+### 4. Object-Object Interaction
+
+| Task Description | Example |
+|------------------|---------|
+| Use one object to move another | Use the alphabet soup to push tomato sauce to the right of butter, the gripper should not touch tomato sauce |
+| Push an object over with another object | Pick the butter and use it to push the milk carton over |
+| Use object to close something | Use the can to close the drawer |
+| Use object as separator | Use the wooden tray upright as a separator between tomato sauce and alphabet soup |
+| Align parts accurately | Align two books corner to corner |
+
+---
+
+### 5. Process Constraints
+
+| Task Description | Example |
+|------------------|---------|
+| Swap positions without lifting | Swap the position of butter and cream cheese without lifting either |
+| Pick–flip–return in place | Pick the ketchup, flip it over and back, then put it back in place |
+| Pick specific part | Pick the ketchup at its bottle neck |
+| Touch in sequence | Touch the front of the basket, then the back, then return to front again |
+| Push through narrow gap | Push the tomato sauce between the gap between milk carton and orange juice |
+| Let object reset after tilt | Tilt the orange juice by pushing it, then let it go and allow it to return to its original state |
+
+---
+
+### 6. Initial State Variations
+
+| Task Description | Example |
+|------------------|---------|
+| Re-orient upright | Rotate the Moka pot from lying flat back to upright |
+| Retrieve from enclosed space | Get the bowl out of the drawer and put it on the table |
+| Remove from stacked position | Remove the butter from the top of cream cheese |
+| Dump contents | Tilt the wooden tray to dump its contents on the table |
+| Break linear arrangement | Make the center of butter, tomato sauce and milk no longer on a straight line |
+
+---
