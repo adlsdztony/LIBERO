@@ -177,7 +177,7 @@ class TabletopSceneCustom(InitialSceneTemplates):
 def main():
     """Defines and registers the task with the libero environment."""
     scene_name = "tabletop_scene_custom"
-    language = "Lean the yellow book against both the microwave and the shelf"
+    language = "Lean the yellow book against both the microwave and the shelf without its spine touching the table"
     register_task_info(
         language,
         scene_name=scene_name,
