@@ -17,7 +17,7 @@ def main():
 
     # Write your reward code here
     scene_name = "living_room_scene1"
-    language = "stack creame cheese on alphabet soup and tomato sauce"
+    language = "stack creame cheese on both alphabet soup and tomato sauce"
     register_task_info(
         language,
         scene_name=scene_name,

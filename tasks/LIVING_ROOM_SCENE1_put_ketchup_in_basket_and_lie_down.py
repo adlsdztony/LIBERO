@@ -17,7 +17,7 @@ def main():
 
     # Write your reward code here
     scene_name = "living_room_scene1"
-    language = "put ketchup in basket and lie down basket"
+    language = "place ketchup into basket and tip basket onto its side"
     register_task_info(
         language,
         scene_name=scene_name,
