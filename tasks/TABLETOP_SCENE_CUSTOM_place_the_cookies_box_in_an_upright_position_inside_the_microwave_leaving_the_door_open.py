@@ -187,7 +187,7 @@ def main():
             "cookies_1", "microwave_1"
         ],
         goal_states=[
-            ("RelaxedOn", "cookies_1", "microwave_1"),
+            ("In", "cookies_1", "microwave_1_heating_region"),
             ("Open", "microwave_1"),
             ("Not", ("InAir", "cookies_1", 0.9865)),
             ("InAir", "cookies_1", 0.9860),
