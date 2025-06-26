@@ -179,7 +179,7 @@ class TabletopSceneCustom(InitialSceneTemplates):
 def main():
 
     scene_name = "tabletop_scene_custom"
-    language = "Lay the milk carton on its side and place the plate on top of it."
+    language = "Lay the milk carton on its side and place the plate on top of it towards the centre."
     register_task_info(
         language,
         scene_name=scene_name,
