@@ -16,23 +16,25 @@ from libero.libero.benchmark.mu_creation import *
 def main():
 
     # Write your reward code here
-    scene_name = "kitchen_scene8"
-    language = "Place left pot on stove's heat region and right on stove but not heat"
+    scene_name = "living_room_scene1"
+    language = "stack creame cheese on both alphabet soup and tomato sauce"
     register_task_info(
         language,
         scene_name=scene_name,
-        objects_of_interest=["moka_pot_1", "moka_pot_2", "flat_stove_1"],
-        goal_states = [
-            ("On", "moka_pot_2", "flat_stove_1_cook_region"),
-            ("Not", ("On", "moka_pot_1", "flat_stove_1_cook_region")),
-            ("RelaxedOn", "moka_pot_1", "flat_stove_1"),
-            ("Upright", "moka_pot_2"),
-            ("Upright", "moka_pot_1"),
+        objects_of_interest=["alphabet_soup_1", "tomato_sauce_1", "cream_cheese_1"],
+        goal_states=[
+            ("RelaxedOn", "cream_cheese_1", "alphabet_soup_1"),
+            ("RelaxedOn", "cream_cheese_1", "tomato_sauce_1"),
+            ("InContact", "cream_cheese_1", "alphabet_soup_1"),
+            ("InContact", "cream_cheese_1", "tomato_sauce_1"),
+            ("AxisAlignedWithin", "alphabet_soup_1", "z", 85, 95),
+            ("AxisAlignedWithin", "tomato_sauce_1", "z", 85, 95),
         ],
     )
 
     bddl_file_names, failures = generate_bddl_from_task_info()
     print(bddl_file_names)
+
 
 if __name__ == "__main__":
     main()
