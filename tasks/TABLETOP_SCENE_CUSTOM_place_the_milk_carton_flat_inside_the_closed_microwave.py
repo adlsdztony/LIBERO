@@ -187,9 +187,7 @@ def main():
             "milk_1", "microwave_1"
         ],
         goal_states=[
-            ("RelaxedOn", "milk_1", "microwave_1"),
-            ("Not", ("InAir", "milk_1", 0.973)),
-            ("InAir", "milk_1", 0.971),
+            ("In", "milk_1", "microwave_1_heating_region"),
             ("AxisAlignedWithin", "milk_1", "y", 87, 93),
             ("Close", "microwave_1"),
         ],
