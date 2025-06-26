@@ -188,7 +188,7 @@ def main():
         goal_states=[
         ("Upright", "porcelain_mug_1"),
         ("Not", ("InContact", "porcelain_mug_1", "red_coffee_mug_1")),
-        ("DistanceBetween", "porcelain_mug_1", "red_coffee_mug_1", 0.05, 0.05, 0.15),
+        ("Above", "porcelain_mug_1", "red_coffee_mug_1"),
     ]
     )
     bddl_file_names, failures = generate_bddl_from_task_info()
