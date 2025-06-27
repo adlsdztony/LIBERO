@@ -71,6 +71,7 @@ VALIDATE_PREDICATE_FN_DICT = {
     "istouchingsideaxis": IsTouchingSideAxis(),
     "axisalignedwithinobjectaxis": AxisAlignedWithinObjectAxis(),
     "neuraljudge": NeuralJudge(),
+    "flexibleabove":FlexibleAbove(),
 }
 
 # wrapper predicates

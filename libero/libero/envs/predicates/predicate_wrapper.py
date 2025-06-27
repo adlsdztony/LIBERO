@@ -27,7 +27,10 @@ class BoolResultWrapper:
         self.print_result = print_result
     
     def __bool__(self):
-        return self.result
+        try:
+            return bool(self.result)
+        except Exception as e:
+            raise ValueError(f"Result is not a boolean: {self.result}. Error: {e}")
 
     def __str__(self):
         return f"{self.print_result}"
