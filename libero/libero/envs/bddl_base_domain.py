@@ -686,6 +686,11 @@ class BDDLBaseDomain(SingleArmEnv):
                         rotation = self.objects_dict[object_name].rotation
                         rotation_axis = self.objects_dict[object_name].rotation_axis
 
+                    if len(state) > 3:
+                        z_offset = float(state[3])
+                    else:
+                        z_offset = 0
+
                     region_sampler = get_region_samplers(
                         problem_name, mapping_inv[target_name]
                     )(
@@ -696,6 +701,7 @@ class BDDLBaseDomain(SingleArmEnv):
                         rotation=rotation,
                         rotation_axis=rotation_axis,
                         reference_pos=self.workspace_offset,
+                        z_offset=z_offset,
                     )
                     self.placement_initializer.append_sampler(region_sampler)
             if state[0] in ["open", "close"]:
@@ -767,8 +773,8 @@ class BDDLBaseDomain(SingleArmEnv):
             sampler = ObjectBasedSampler(
                 f"{object_name}_sampler",
                 mujoco_objects=self.objects_dict[object_name],
-                x_ranges=[[0.0, 0.0]],
-                y_ranges=[[0.0, 0.0]],
+                x_ranges=[[-0.01, 0.01]],
+                y_ranges=[[-0.01, 0.01]],
                 ensure_object_boundary_in_range=False,
                 ensure_valid_placement=False,
                 rotation=self.objects_dict[object_name].rotation,
@@ -781,18 +787,47 @@ class BDDLBaseDomain(SingleArmEnv):
         for state in conditioned_initial_place_state_in_objects:
             object_name = state[1]
             region_name = state[2]
+
+            """
+            (Zicheng) offset_xy is the offset of the object in the containing region, in the unit of the size of the containing region
+            if offset_xy is not None, the object will be placed at the offset_xy position in the containing region
+            if offset_xy is None, the object will be placed at the center of the containing region
+            the offset_xy is a tuple of two floats, the first float is the x offset, the second float is the y offset
+            the offset_xy is relative to the center of the containing region
+            value range is [-1, 1] for both x and y
+            """
+            offset = tuple(map(float, state[3:6])) if len(state) == 6 else None
             target_name = regions[region_name]["target"]
 
             site_xy_size = self.object_sites_dict[region_name].size[:2]
+
+            if offset is not None:
+                x_ranges = [[offset[0]*site_xy_size[0], offset[0]*site_xy_size[0]]]
+                y_ranges = [[offset[1]*site_xy_size[1], offset[1]*site_xy_size[1]]]
+                z_offset = offset[2]
+            else:
+                x_ranges = [[-site_xy_size[0] / 2, site_xy_size[0] / 2]]
+                y_ranges = [[-site_xy_size[1] / 2, site_xy_size[1] / 2]]
+                z_offset = 0
+
+            # override the rotation of the object if it is specified in the initial state
+            if object_name in initial_rotation_override:
+                rotation = initial_rotation_override[object_name]
+                rotation_axis = None
+            else:
+                rotation = self.objects_dict[object_name].rotation
+                rotation_axis = self.objects_dict[object_name].rotation_axis
+
             sampler = InSiteRegionRandomSampler(
                 f"{object_name}_sampler",
                 mujoco_objects=self.objects_dict[object_name],
-                # x_ranges=[[-site_xy_size[0] / 2, site_xy_size[0] / 2]],
-                # y_ranges=[[-site_xy_size[1] / 2, site_xy_size[1] / 2]],
+                x_ranges=x_ranges,
+                y_ranges=y_ranges,
                 ensure_object_boundary_in_range=False,
                 ensure_valid_placement=False,
-                rotation=self.objects_dict[object_name].rotation,
-                rotation_axis=self.objects_dict[object_name].rotation_axis,
+                rotation=rotation,
+                rotation_axis=rotation_axis,
+                z_offset=z_offset,
             )
             self.conditional_placement_initializer.append_sampler(
                 sampler, {"reference": target_name, "site_name": region_name}

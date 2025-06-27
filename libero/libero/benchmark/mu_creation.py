@@ -794,6 +794,98 @@ class KitchenScene11(InitialSceneTemplates):
         ]
         return states
 
+@register_mu(scene_type="kitchen")
+class KitchenScene2_1(InitialSceneTemplates):
+    def __init__(self):
+
+        fixture_num_info = {
+            "kitchen_table": 1,
+            "wooden_cabinet": 1,
+        }
+
+        object_num_info = {
+            "akita_black_bowl": 3,
+            "plate": 1,
+        }
+
+        super().__init__(
+            workspace_name="kitchen_table",
+            fixture_num_info=fixture_num_info,
+            object_num_info=object_num_info,
+        )
+
+    def define_regions(self):
+        self.regions.update(
+            self.get_region_dict(
+                region_centroid_xy=[0.0, -0.30],
+                region_name="wooden_cabinet_init_region",
+                target_name=self.workspace_name,
+                region_half_len=0.01,
+                yaw_rotation=(np.pi, np.pi),
+            )
+        )
+
+        self.regions.update(
+            self.get_region_dict(
+                region_centroid_xy=[-0.05, 0.20],
+                region_name="akita_black_bowl_middle_init_region",
+                target_name=self.workspace_name,
+                region_half_len=0.025,
+            )
+        )
+
+        self.regions.update(
+            self.get_region_dict(
+                region_centroid_xy=[0.10, 0.15],
+                region_name="akita_black_bowl_front_init_region",
+                target_name=self.workspace_name,
+                region_half_len=0.025,
+            )
+        )
+
+        self.regions.update(
+            self.get_region_dict(
+                region_centroid_xy=[-0.15, 0.05],
+                region_name="akita_black_bowl_back_init_region",
+                target_name=self.workspace_name,
+                region_half_len=0.025,
+            )
+        )
+
+        self.regions.update(
+            self.get_region_dict(
+                region_centroid_xy=[0.0, 0.0],
+                region_name="plate_init_region",
+                target_name=self.workspace_name,
+                region_half_len=0.025,
+            )
+        )
+        self.xy_region_kwargs_list = get_xy_region_kwargs_list_from_regions_info(
+            self.regions
+        )
+
+    @property
+    def init_states(self):
+        states = [
+            (
+                "On",
+                "akita_black_bowl_1",
+                "wooden_cabinet_1_top_region",
+            ),
+            (
+                "On",
+                "akita_black_bowl_2",
+                "kitchen_table_akita_black_bowl_middle_init_region",
+            ),
+            (
+                "On",
+                "akita_black_bowl_3",
+                "akita_black_bowl_2",
+            ),
+            ("On", "plate_1", "kitchen_table_plate_init_region"),
+            ("On", "wooden_cabinet_1", "kitchen_table_wooden_cabinet_init_region"),
+        ]
+        return states
 
 @register_mu(scene_type="living_room")
 class LivingRoomScene1(InitialSceneTemplates):
@@ -1346,6 +1438,211 @@ class LivingRoomScene6(InitialSceneTemplates):
                 "living_room_table_chocolate_pudding_init_region",
             ),
             ("On", "porcelain_mug_1", "living_room_table_porcelain_mug_init_region"),
+        ]
+        return states
+
+
+@register_mu(scene_type="living_room")
+class LivingRoomScene2_1(InitialSceneTemplates):
+    def __init__(self):
+
+        fixture_num_info = {
+            "living_room_table": 1,
+        }
+
+        object_num_info = {
+            "alphabet_soup": 1,
+            "cream_cheese": 1,
+            "tomato_sauce": 1,
+            "ketchup": 1,
+            "orange_juice": 1,
+            "milk": 1,
+            "butter": 1,
+            "basket": 1,
+        }
+
+        super().__init__(
+            workspace_name="living_room_table",
+            fixture_num_info=fixture_num_info,
+            object_num_info=object_num_info,
+        )
+
+    def define_regions(self):
+        self.regions.update(
+            self.get_region_dict(
+                region_centroid_xy=[0.0, 0.26],
+                region_name="basket_init_region",
+                target_name=self.workspace_name,
+                region_half_len=0.01,
+            )
+        )
+
+        self.regions.update(
+            self.get_region_dict(
+                region_centroid_xy=[0.10, -0.20],
+                region_name="cream_cheese_init_region",
+                target_name=self.workspace_name,
+                region_half_len=0.025,
+            )
+        )
+
+        self.regions.update(
+            self.get_region_dict(
+                region_centroid_xy=[0.0, -0.25],
+                region_name="orange_juice_init_region",
+                target_name=self.workspace_name,
+                region_half_len=0.025,
+            )
+        )
+
+        self.regions.update(
+            self.get_region_dict(
+                region_centroid_xy=[-0.1, 0.05],
+                region_name="tomato_sauce_init_region",
+                target_name=self.workspace_name,
+                region_half_len=0.025,
+            )
+        )
+        self.regions.update(
+            self.get_region_dict(
+                region_centroid_xy=[-0.10, -0.15],
+                region_name="alphabet_soup_init_region",
+                target_name=self.workspace_name,
+                region_half_len=0.025,
+            )
+        )
+        self.regions.update(
+            self.get_region_dict(
+                region_centroid_xy=[0.05, 0.05],
+                region_name="butter_init_region",
+                target_name=self.workspace_name,
+                region_half_len=0.025,
+            )
+        )
+        self.regions.update(
+            self.get_region_dict(
+                region_centroid_xy=[-0.25, -0.15],
+                region_name="ketchup_init_region",
+                target_name=self.workspace_name,
+                region_half_len=0.025,
+            )
+        )
+        self.xy_region_kwargs_list = get_xy_region_kwargs_list_from_regions_info(
+            self.regions
+        )
+
+    @property
+    def init_states(self):
+        states = [
+            ("override_rotate", "ketchup_1", "x", 0),
+            ("override_rotate", "cream_cheese_1", "z", 90),
+            ("override_rotate", "cream_cheese_1", "y", 90),
+            ("override_rotate", "alphabet_soup_1", "y", 90),
+            ("On", "alphabet_soup_1", "living_room_table_alphabet_soup_init_region"),
+            ("On", "cream_cheese_1", "living_room_table_cream_cheese_init_region", "0.01"),
+            ("On", "tomato_sauce_1", "living_room_table_tomato_sauce_init_region"),
+            ("On", "ketchup_1", "living_room_table_ketchup_init_region"),
+            ("In", "milk_1", "basket_1_contain_region"),
+            ("On", "orange_juice_1", "living_room_table_orange_juice_init_region", "0.01"),
+            ("On", "butter_1", "living_room_table_butter_init_region"),
+            ("On", "basket_1", "living_room_table_basket_init_region"),
+        ]
+        return states
+
+
+@register_mu(scene_type="living_room")
+class LivingRoomScene3_1(InitialSceneTemplates):
+    def __init__(self):
+
+        fixture_num_info = {
+            "living_room_table": 1,
+        }
+
+        object_num_info = {
+            "alphabet_soup": 1,
+            "cream_cheese": 1,
+            "tomato_sauce": 1,
+            "ketchup": 1,
+            "butter": 1,
+            "wooden_tray": 1,
+        }
+
+        super().__init__(
+            workspace_name="living_room_table",
+            fixture_num_info=fixture_num_info,
+            object_num_info=object_num_info,
+        )
+
+    def define_regions(self):
+        self.regions.update(
+            self.get_region_dict(
+                region_centroid_xy=[0.0, 0.26],
+                region_name="wooden_tray_init_region",
+                target_name=self.workspace_name,
+                region_half_len=0.01,
+            )
+        )
+
+        self.regions.update(
+            self.get_region_dict(
+                region_centroid_xy=[0.10, -0.20],
+                region_name="cream_cheese_init_region",
+                target_name=self.workspace_name,
+                region_half_len=0.025,
+            )
+        )
+
+        self.regions.update(
+            self.get_region_dict(
+                region_centroid_xy=[-0.1, 0.05],
+                region_name="tomato_sauce_init_region",
+                target_name=self.workspace_name,
+                region_half_len=0.025,
+            )
+        )
+        self.regions.update(
+            self.get_region_dict(
+                region_centroid_xy=[-0.10, -0.15],
+                region_name="alphabet_soup_init_region",
+                target_name=self.workspace_name,
+                region_half_len=0.025,
+            )
+        )
+        self.regions.update(
+            self.get_region_dict(
+                region_centroid_xy=[0.05, 0.05],
+                region_name="butter_init_region",
+                target_name=self.workspace_name,
+                region_half_len=0.025,
+            )
+        )
+        self.regions.update(
+            self.get_region_dict(
+                region_centroid_xy=[-0.25, -0.15],
+                region_name="ketchup_init_region",
+                target_name=self.workspace_name,
+                region_half_len=0.025,
+            )
+        )
+        self.xy_region_kwargs_list = get_xy_region_kwargs_list_from_regions_info(
+            self.regions
+        )
+
+    @property
+    def init_states(self):
+        states = [
+            ("override_rotate", "alphabet_soup_1", "y", 90),
+            ("override_rotate", "tomato_sauce_1", "y", 90),
+            ("override_rotate", "tomato_sauce_1", "x", 90),
+            ("override_rotate", "ketchup_1", "x", -90),
+            ("override_rotate", "ketchup_1", "z", -90),
+            ("override_rotate", "cream_cheese_1", "z", 90),
+            ("On", "alphabet_soup_1", "living_room_table_alphabet_soup_init_region"),
+            ("In", "cream_cheese_1", "wooden_tray_1_contain_region", "0.5", "0.8", "0"),
+            ("In", "tomato_sauce_1", "wooden_tray_1_contain_region", "0", "-0.5", "0"),
+            ("On", "ketchup_1", "living_room_table_ketchup_init_region","0.05"),
+            ("On", "butter_1", "living_room_table_butter_init_region"),
+            ("On", "wooden_tray_1", "living_room_table_wooden_tray_init_region"),
         ]
         return states
 
