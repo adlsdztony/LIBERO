@@ -98,14 +98,14 @@ def collect_waypoint_trajectory(
             # print_robot_pose_info(active_robot, obs)
 
             # 3. Save the robot base position and quaternion to a file
-            # base_pos, base_quat = get_robot_base_pose(active_robot, obs)
-            # base_pose_path = os.path.join("motion_planning", f"{problem_info['problem_name']}/", "base_pose.txt")
-            # os.makedirs(os.path.dirname(base_pose_path), exist_ok=True)
-            # with open(base_pose_path, "w") as f:
-            #     f.write(json.dumps({
-            #         "base_pos": base_pos.tolist(),
-            #         "base_quat": base_quat.tolist()
-            #     }))
+            base_pos, base_quat = get_robot_base_pose(active_robot, obs)
+            base_pose_path = os.path.join("motion_planning", f"{problem_info['problem_name']}/", "base_pose.txt")
+            os.makedirs(os.path.dirname(base_pose_path), exist_ok=True)
+            with open(base_pose_path, "w") as f:
+                f.write(json.dumps({
+                    "base_pos": base_pos.tolist(),
+                    "base_quat": base_quat.tolist()
+                }))
             run_once = False
 
         # Check if waypoint recording was requested (more efficient check)
