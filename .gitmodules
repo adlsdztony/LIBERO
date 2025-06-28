@@ -1,0 +1,3 @@
+[submodule "GenSim2"]
+	path = GenSim2
+	url = https://github.com/Carbonadooo/GenSim2.git
