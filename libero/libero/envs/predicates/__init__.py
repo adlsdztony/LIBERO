@@ -62,6 +62,7 @@ VALIDATE_PREDICATE_FN_DICT = {
     "axisalignedwithinworldaxis": AxisAlignedWithinWorldAxis(),
     "istouchingsideaxis": IsTouchingSideAxis(),
     "neuraljudge": NeuralJudge(),
+    "oppositedirection": OppositeDirection(),
 }
 
 # wrapper predicates
