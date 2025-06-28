@@ -15,7 +15,7 @@ from libero.libero.benchmark.mu_creation import *
 def main():
     """Defines and registers the task with the libero environment."""
     scene_name = "tabletop_scene1"
-    language = "Place the bowl upside down with the bottom facing the upside down plate"
+    language = "Stack the upside-down plate on the upside-down bowl"
     register_task_info(
         language,
         scene_name=scene_name,
