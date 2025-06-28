@@ -23,7 +23,9 @@ def main():
         objects_of_interest=["alphabet_soup_1", "basket_1"],
         goal_states=[
             ("In", "alphabet_soup_1", "basket_1_contain_region"),
-            ("UpsideDown", "basket_1")
+            ("UpsideDown", "basket_1"),
+            ("PositionWithin", "basket_1", 0.0, 0.0, 0.582, 1, 1, 0.01),
+            ("PositionWithin", "alphabet_soup_1", 0.0, 0.0, 0.475, 1, 1, 0.01),
         ]
     )
 
