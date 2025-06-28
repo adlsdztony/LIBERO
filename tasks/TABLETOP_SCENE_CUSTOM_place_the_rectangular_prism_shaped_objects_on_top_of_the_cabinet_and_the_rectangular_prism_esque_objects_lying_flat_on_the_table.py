@@ -194,18 +194,21 @@ def main():
             ("RelaxedOn", "yellow_book_1", "wooden_cabinet_1"),
             ("RelaxedOn", "cookies_1", "wooden_cabinet_1"),
             ("RelaxedOn", "macaroni_and_cheese_1", "wooden_cabinet_1"),
+            ("RelaxedOn", "white_storage_box_1", "wooden_cabinet_1"),
 
             ("DistanceBetween", "black_book_1", "wooden_cabinet_1", 0.10, 0.10, 10),
             ("DistanceBetween", "black_book_2", "wooden_cabinet_1", 0.10, 0.10, 10),
             ("DistanceBetween", "yellow_book_1", "wooden_cabinet_1", 0.10, 0.10, 10),
             ("DistanceBetween", "cookies_1", "wooden_cabinet_1", 0.10, 0.10, 10),
             ("DistanceBetween", "macaroni_and_cheese_1", "wooden_cabinet_1", 0.10, 0.10, 10),
+            ("DistanceBetween", "white_storage_box_1", "wooden_cabinet_1", 0.10, 0.10, 10),
             
             ("Not", ("DistanceBetween", "black_book_1", "wooden_cabinet_1", 0, 0, 0.2322)),
             ("Not", ("DistanceBetween", "black_book_2", "wooden_cabinet_1", 0, 0, 0.2322)),
             ("Not", ("DistanceBetween", "yellow_book_1", "wooden_cabinet_1", 0, 0, 0.2322)),
             ("Not", ("DistanceBetween", "cookies_1", "wooden_cabinet_1", 0, 0, 0.2322)),
             ("Not", ("DistanceBetween", "macaroni_and_cheese_1", "wooden_cabinet_1", 0, 0, 0.2322)),
+            ("Not", ("DistanceBetween", "white_storage_box_1", "wooden_cabinet_1", 0, 0, 0.2322)),
 
             ("Not", ("InAir", "milk_1", 0.9263)),
             ("AxisAlignedWithin", "milk_1", "y", 87, 93),
