@@ -1187,6 +1187,32 @@ class Above(BinaryAtomic):
     def expected_arg_types(self):
         return [BaseObjectState, BaseObjectState]
 
+class FlexibleAbove(BinaryAtomic):
+    """
+    This predicate checks if the first object (arg1) is above the second object (arg2) but not necessarily in contact.,
+    with a flexible center alignment constraint.
+    
+    Usage: Above()(arg1, arg2)
+    Args:
+        arg1: The object expected to be above.
+        arg2: The object expected to be below.
+        xy_threshold: Centre alignment thresholds.
+    Returns:
+        bool: True if arg1 is above arg2, False otherwise.
+    """
+
+    def __call__(self, arg1, arg2, xy_threshold):
+        pos1 = arg1.get_geom_state()["pos"]
+        pos2 = arg2.get_geom_state()["pos"]
+        return (
+            abs(pos1[0] - pos2[0]) < xy_threshold
+            and abs(pos1[1] - pos2[1]) < xy_threshold
+            and pos1[2] > pos2[2]
+        )
+
+    def expected_arg_types(self):
+        return [BaseObjectState, BaseObjectState, float]
+
 class MidBetween(MultiarayAtomic):
     """
     This predicate checks if the middle object (M) is positioned between the left object (L) and the right object (R)

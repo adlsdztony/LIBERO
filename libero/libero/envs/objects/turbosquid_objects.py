@@ -149,6 +149,17 @@ class BlackBook(TurbosquidObjects):
         super().__init__(name, obj_name, joints)
         self.rotation = (-np.pi / 2, -np.pi / 4)
 
+@register_object
+class BlackBookCentered(TurbosquidObjects):
+    def __init__(
+        self,
+        name="black_book_centered",
+        obj_name="black_book_centered",
+        joints=[dict(type="free", damping="0.0005")],
+    ):
+        super().__init__(name, obj_name, joints)
+        self.rotation = (-np.pi / 2, -np.pi / 4)
+
 
 @register_object
 class YellowBook(TurbosquidObjects):
@@ -160,6 +171,18 @@ class YellowBook(TurbosquidObjects):
     ):
         super().__init__(name, obj_name, joints)
         self.rotation = (-np.pi / 2, -np.pi / 4)
+
+@register_object
+class YellowBookCentered(TurbosquidObjects):
+    def __init__(
+        self,
+        name="yellow_book_centered",
+        obj_name="yellow_book_centered",
+        joints=[dict(type="free", damping="0.0005")],
+    ):
+        super().__init__(name, obj_name, joints)
+        self.rotation = (-np.pi / 2, -np.pi / 4)
+
 
 
 @register_object
