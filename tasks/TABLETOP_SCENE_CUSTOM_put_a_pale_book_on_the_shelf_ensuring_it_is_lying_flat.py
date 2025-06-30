@@ -33,7 +33,7 @@ class TabletopSceneCustom(InitialSceneTemplates):
 
         object_num_info = {
             "black_book": 2,
-            "yellow_book": 1,
+            "yellow_book_centered": 1,
             "white_storage_box": 1,
             "red_coffee_mug": 1,
             "porcelain_mug": 1,
@@ -159,7 +159,7 @@ class TabletopSceneCustom(InitialSceneTemplates):
             ("On", "wooden_cabinet_1", "main_table_desk_zone_cabinet_region"),
             ("On", "black_book_1", "main_table_desk_zone_book_1_region"),
             ("On", "black_book_2", "main_table_desk_zone_book_2_region"),
-            ("On", "yellow_book_1", "main_table_desk_zone_book_3_region"),
+            ("On", "yellow_book_centered_1", "main_table_desk_zone_book_3_region"),
             ("On", "white_storage_box_1", "main_table_desk_zone_storage_box_region"),
             ("On", "red_coffee_mug_1", "microwave_1_top_side"),
             # Place Kitchenette Zone fixtures and objects
@@ -184,18 +184,16 @@ def main():
         language,
         scene_name=scene_name,
         objects_of_interest=[
-            "yellow_book_1", "wooden_shelf_1"
+            "yellow_book_centered_1", "wooden_shelf_1"
         ],
         goal_states=[
-            ("AxisAlignedWithin", "yellow_book_1", "y", 87, 92),
-            ("Or", ("AxisAlignedWithin", "yellow_book_1", "x", 175, 180), ("AxisAlignedWithin", "yellow_book_1", "x", 0, 5)),
+            ("AxisAlignedWithin", "yellow_book_centered_1", "y", 87, 92),
+            ("Or", ("AxisAlignedWithin", "yellow_book_centered_1", "x", 175, 180), ("AxisAlignedWithin", "yellow_book_centered_1", "x", 0, 5)),
             ("Any", (
-                ("And", ("Under", "yellow_book_1", "wooden_shelf_1_top_side"), ("InAir", "yellow_book_1", "1.083")),
-                ("And", ("Under", "yellow_book_1", "wooden_shelf_1_top_region"), ("InAir", "yellow_book_1", "1.013")),
-                ("And", ("Under", "yellow_book_1", "wooden_shelf_1_middle_region"), ("InAir", "yellow_book_1", "0.943")),
+                ("RelaxedIn", "yellow_book_centered_1", "wooden_shelf_1_top_region"),
+                ("RelaxedIn", "yellow_book_centered_1", "wooden_shelf_1_middle_region"),
+                ("RelaxedIn", "yellow_book_centered_1", "wooden_shelf_1_bottom_region"),
             )),
-            ("FlexibleOn", "yellow_book_1", "wooden_shelf_1", 0.10, 0.02),
-
         ],
     )
     bddl_file_names, failures = generate_bddl_from_task_info()
